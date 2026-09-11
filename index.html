@@ -121,7 +121,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
 'use strict';
 
 const S = { waypoints: [], tpRaw: [], results: [], map: null, mapReady: false, drawnGroup: null };
-const DATA_URL = './data/tp_notices.json';
+const DATA_URL = './data/tp_notices.json?v=' + Date.now();
 
 function switchTab(t) {
   document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
@@ -130,7 +130,14 @@ function switchTab(t) {
   document.getElementById('n-' + t).classList.add('active');
   if (t === 'map') {
     if (!S.mapReady) initMap();
-    else setTimeout(() => S.map && S.map.invalidateSize(), 100);
+    setTimeout(() => {
+      if (S.map) {
+        S.map.invalidateSize();
+        if (S.routeLayer && S.waypoints.length >= 2) {
+          S.map.fitBounds(S.routeLayer.getBounds(), { padding: [60, 60], maxZoom: 12 });
+        }
+      }
+    }, 150);
   }
 }
 
@@ -233,11 +240,11 @@ function runAnalysis() {
   results.sort((a,b) => a.distance - b.distance);
   S.results = results;
 
+  switchTab('map');
   if (!S.mapReady) initMap();
   renderRoute();
   renderMarkers();
   renderReport();
-  switchTab('map');
 }
 
 function initMap() {
@@ -252,7 +259,12 @@ function renderRoute() {
   if (S.routeLayer) S.map.removeLayer(S.routeLayer);
   const ll = S.waypoints.map(w => [w.lat, w.lon]);
   S.routeLayer = L.polyline(ll, { color:'#4D6F8A', weight:4 }).addTo(S.map);
-  S.map.fitBounds(S.routeLayer.getBounds(), { padding:[40,40] });
+  setTimeout(() => {
+    if (S.map && S.routeLayer && S.waypoints.length >= 2) {
+      S.map.invalidateSize();
+      S.map.fitBounds(S.routeLayer.getBounds(), { padding: [60, 60], maxZoom: 12 });
+    }
+  }, 100);
 }
 
 function renderMarkers() {
