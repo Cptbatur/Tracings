@@ -16,8 +16,8 @@
   --accent:#4D6F8A;--accent-l:#6990a8;--accent-d:#3a5569;
   --text:#e8edf2;--dim:#7a8fa8;--dim2:#4a6070;
   --red:#e53e3e;--yellow:#d69e2e;--green:#38a169;
-  --red-bg:rgba(229,62,62,.14);--yellow-bg:rgba(214,158,46,.14);--green-bg:rgba(56,161,105,.14);
-  --red-l:#fc8181;--yellow-l:#f6e05e;--green-l:#68d391;
+  --red-bg:rgba(229,62,62,.14);--yellow-bg:rgba(214,158,46,.14);
+  --red-l:#fc8181;--yellow-l:#f6e05e;
   --border:rgba(77,111,138,.22);
   --nav-h:64px;--hdr-h:56px;
 }
@@ -424,7 +424,7 @@ async function handleFile(file) {
   }
 }
 
-// GEOMETRY & ANALYSIS ENGINE
+// GEOMETRY ENGINE
 const R_NM = 3440.065;
 function toR(d) { return d * Math.PI / 180; }
 
@@ -484,7 +484,7 @@ async function runAnalysis() {
   }
 }
 
-// MAP RENDERER (MULTI-GROUP SUPPORT)
+// MAP RENDERER
 function initMap() {
   const map = L.map('lmap', { center:[35, 15], zoom:3 });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
