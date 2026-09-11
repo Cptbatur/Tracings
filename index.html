@@ -336,6 +336,7 @@ const S = {
   corridorLayers: [],
   routeLayer: null,
   wpMarkers: [],
+  allNoticeLayerGroup: null
 };
 
 const DATA_URL = './data/tp_notices.json';
@@ -347,7 +348,14 @@ function switchTab(t) {
   document.getElementById('n-' + t).classList.add('active');
   if (t === 'map') {
     if (!S.mapReady) initMap();
-    else setTimeout(() => S.map && S.map.invalidateSize(), 80);
+    else {
+      setTimeout(() => {
+        S.map && S.map.invalidateSize();
+        if (S.routeLayer) {
+          S.map.fitBounds(S.routeLayer.getBounds(), { padding:[50,50] });
+        }
+      }, 100);
+    }
   }
 }
 
@@ -548,35 +556,37 @@ async function runAnalysis() {
   }
 }
 
-// MAP & FULL GEOMETRY RENDERER
+// MAP & GEOMETRY RENDERER
 function initMap() {
-  const map = L.map('lmap', { center:[50,0], zoom:5 });
+  const map = L.map('lmap', { center:[35, 15], zoom:3 }); // Geniş Akdeniz/Avrupa Kuş Bakışı
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
   L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { opacity:0.8 }).addTo(map);
   S.map = map;
   S.mapReady = true;
+  S.allNoticeLayerGroup = L.layerGroup().addTo(map);
 
-  // Rota yoksa da açılışta tüm T&P geometrilerini haritaya çiz
   renderAllNoticesInitial();
 }
 
 function renderRoute() {
   if (S.routeLayer) S.map.removeLayer(S.routeLayer);
   const ll = S.waypoints.map(w => [w.lat, w.lon]);
-  S.routeLayer = L.polyline(ll, { color:'#e8edf2', weight:3 }).addTo(S.map);
-  S.map.fitBounds(S.routeLayer.getBounds(), { padding:[30,30] });
+  S.routeLayer = L.polyline(ll, { color:'#e8edf2', weight:3.5 }).addTo(S.map);
+  
+  // Rotayı tam kuş bakışı kadraja oturt
+  S.map.fitBounds(S.routeLayer.getBounds(), { padding:[60,60] });
 }
 
 function renderAllNoticesInitial() {
   if (!S.tpRaw.length) return;
+  S.allNoticeLayerGroup.clearLayers();
   
-  // Rota yüklenmeden önce de haritadaki Poligon/Çizgi/Nokta şekillerini çiz
   for (const notice of S.tpRaw) {
-    drawNoticeShape(notice, 'yellow');
+    drawNoticeShape(notice, 'yellow', S.allNoticeLayerGroup);
   }
 }
 
-function drawNoticeShape(notice, color) {
+function drawNoticeShape(notice, color, targetGroup) {
   const coords = notice.coordinates || [];
   const gtype = notice.geometry_type || 'POINT';
   const cGroups = notice.coordinate_groups || (coords.length > 0 ? [coords] : []);
@@ -584,28 +594,28 @@ function drawNoticeShape(notice, color) {
 
   if (!cGroups.length) return;
 
-  const layerGroup = L.layerGroup();
+  const grp = targetGroup || S.map;
   for (const cg of cGroups) {
     if (!cg.length) continue;
     const ll = cg.map(([la,lo]) => [la,lo]);
 
     if (gtype === 'LINE' && cg.length >= 2) {
-      L.polyline(ll, { color:hex, weight:2.5, dashArray:'6,4' }).addTo(layerGroup);
+      L.polyline(ll, { color:hex, weight:3, dashArray:'6,4' }).addTo(grp);
     } else if (gtype === 'AREA' && cg.length >= 3) {
-      L.polygon(ll, { color:hex, weight:1.5, fillColor:hex, fillOpacity:0.2 }).addTo(layerGroup);
+      L.polygon(ll, { color:hex, weight:2, fillColor:hex, fillOpacity:0.25 }).addTo(grp);
     } else {
-      L.circleMarker(ll[0], { radius:5, fillColor:hex, color:'#fff', weight:1, fillOpacity:0.8 }).addTo(layerGroup);
+      L.circleMarker(ll[0], { radius:5, fillColor:hex, color:'#fff', weight:1, fillOpacity:0.85 }).addTo(grp);
     }
   }
-  layerGroup.addTo(S.map);
 }
 
 function renderMarkers() {
+  if (S.allNoticeLayerGroup) S.allNoticeLayerGroup.clearLayers();
   Object.values(S.markerMap).forEach(m => S.map.removeLayer(m));
   S.markerMap = {};
 
   for (const r of S.results) {
-    drawNoticeShape(r.notice, r.color);
+    drawNoticeShape(r.notice, r.color, S.map);
   }
 }
 
