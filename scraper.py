@@ -12,6 +12,7 @@ JSON_PATH = os.path.join(DATA_DIR, "tp_notices.json")
 def normalize_text(txt):
     if not txt:
         return ""
+    # UKHO metin içi tırnak ve orta nokta temizliği
     txt = re.sub(r"[\'´`’]\s*[·•\.]", ".", txt)
     txt = txt.replace('´', "'").replace('`', "'").replace('’', "'")
     txt = txt.replace('·', '.').replace('•', '.')
@@ -34,6 +35,7 @@ def extract_coordinates(text):
     clean = normalize_text(text)
     coords = []
     
+    # Şamandıra kodları (BS1, BV1 vb.) ve tablo harflerini temizleyerek koordinat sökme
     pattern = re.compile(
         r'(\d{1,3})\s*°\s*(\d{1,2}(?:\.\d+)?)?\s*\'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*["”])?\s*([NS])\b[\s\.,]*'
         r'(\d{1,3})\s*°\s*(\d{1,2}(?:\.\d+)?)?\s*\'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*["”])?\s*([EW])\b',
@@ -50,10 +52,16 @@ def extract_coordinates(text):
 
 def detect_geometry_type(text, coord_count):
     txt_low = text.lower()
-    if 'area bounded' in txt_low or 'bounded by' in txt_low or 'within area' in txt_low:
-        return 'AREA' if coord_count >= 3 else ('LINE' if coord_count == 2 else 'POINT')
-    if 'joining' in txt_low or 'pipeline' in txt_low or 'cable' in txt_low or 'track' in txt_low:
+    
+    # 1. KABLOLAR VE BORU HATTLARI KESİNLİKLE 'LINE'
+    if any(k in txt_low for k in ['submarine cable', 'submarine cables', 'pipeline', 'joining the following', 'joining:']):
         return 'LINE' if coord_count >= 2 else 'POINT'
+        
+    # 2. YASAKLI SAHALAR, ATIŞ SAHALARI VE ÇALIŞMA ALANLARI 'AREA'
+    if any(k in txt_low for k in ['area bounded', 'bounded by', 'within area', 'restricted area', 'work areas', 'firing practice area']):
+        return 'AREA' if coord_count >= 3 else ('LINE' if coord_count == 2 else 'POINT')
+        
+    # 3. GENEL MANIK
     if coord_count >= 3:
         return 'AREA'
     elif coord_count == 2:
@@ -85,7 +93,6 @@ def process_pdfs():
                         if "(T)/" not in clean_block and "(P)/" not in clean_block:
                             continue
 
-                        # Sadece "3852(T)/07 2.370" gibi indeks gürültülerini filtrele
                         if len(clean_block) < 35 and re.search(r'\d+\.\d+$', clean_block):
                             continue
                             

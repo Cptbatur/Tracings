@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-11T19:33:29.214454+00:00",
+  "last_updated": "2026-09-11T19:47:33.223969+00:00",
   "total_notices": 4759,
   "notices": [
     {
@@ -515,7 +515,7 @@
       ],
       "center_lat": 53.312167,
       "center_lon": -3.738,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -7899,7 +7899,7 @@
       ],
       "center_lat": 56.341833,
       "center_lon": -6.385167,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -8603,7 +8603,7 @@
       ],
       "center_lat": 56.638667,
       "center_lon": -5.4385,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -13179,7 +13179,7 @@
       ],
       "center_lat": 70.688667,
       "center_lon": 23.588167,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -13587,7 +13587,7 @@
       ],
       "center_lat": 63.533333,
       "center_lon": 5.366667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -14415,7 +14415,7 @@
       ],
       "center_lat": 60.75,
       "center_lon": 3.588333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -16403,7 +16403,7 @@
       ],
       "center_lat": 56.532333,
       "center_lon": 10.859333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -20275,7 +20275,7 @@
       ],
       "center_lat": 55.74,
       "center_lon": 12.585,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -27611,7 +27611,7 @@
       ],
       "center_lat": 55.080333,
       "center_lon": 1.524333,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -38475,7 +38475,7 @@
       ],
       "center_lat": 31.479,
       "center_lon": 31.7395,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -39859,7 +39859,7 @@
       ],
       "center_lat": 37.048333,
       "center_lon": 14.273333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -44367,7 +44367,7 @@
       ],
       "center_lat": 44.399633,
       "center_lon": 8.880683,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -46095,7 +46095,7 @@
       ],
       "center_lat": 34.719533,
       "center_lon": 33.312533,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -48731,7 +48731,7 @@
       ],
       "center_lat": 14.699167,
       "center_lon": -17.413833,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -52703,7 +52703,7 @@
       ],
       "center_lat": 25.657667,
       "center_lon": 55.747667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -53131,7 +53131,7 @@
       ],
       "center_lat": 17.013333,
       "center_lon": 41.331667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -53267,7 +53267,7 @@
       ],
       "center_lat": 25.934667,
       "center_lon": 51.548833,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -54343,7 +54343,7 @@
       ],
       "center_lat": 26.167167,
       "center_lon": 50.6595,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -54411,7 +54411,7 @@
       ],
       "center_lat": 25.95025,
       "center_lon": 51.455733,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -58791,7 +58791,7 @@
       ],
       "center_lat": 16.531667,
       "center_lon": 96.333333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -69351,7 +69351,7 @@
       ],
       "center_lat": 10.067167,
       "center_lon": 104.076167,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -69719,7 +69719,7 @@
       ],
       "center_lat": 25.239833,
       "center_lon": 119.546667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -74403,7 +74403,7 @@
       ],
       "center_lat": 32.009167,
       "center_lon": 119.967333,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -75059,7 +75059,7 @@
       ],
       "center_lat": 24.111833,
       "center_lon": 120.394,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -82867,7 +82867,7 @@
       ],
       "center_lat": 33.396333,
       "center_lon": 131.663667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -87927,7 +87927,7 @@
       ],
       "center_lat": 34.012167,
       "center_lon": 134.632,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -88019,7 +88019,7 @@
       ],
       "center_lat": 34.589917,
       "center_lon": 134.820333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -88519,7 +88519,7 @@
       ],
       "center_lat": 26.710333,
       "center_lon": 127.828667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -103583,7 +103583,7 @@
       ],
       "center_lat": -12.968333,
       "center_lon": 124.445,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -106095,7 +106095,7 @@
       ],
       "center_lat": -26.657167,
       "center_lon": 153.110333,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -111427,7 +111427,7 @@
       ],
       "center_lat": -2.958333,
       "center_lon": -80.341667,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -116159,7 +116159,7 @@
       ],
       "center_lat": -23.991333,
       "center_lon": -46.323,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -117331,7 +117331,7 @@
       ],
       "center_lat": -26.898383,
       "center_lon": -48.666583,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -120735,7 +120735,7 @@
       ],
       "center_lat": -34.952833,
       "center_lon": -54.9285,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -121735,7 +121735,7 @@
       ],
       "center_lat": -22.804233,
       "center_lon": -43.15175,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -124403,7 +124403,7 @@
       ],
       "center_lat": 11.148833,
       "center_lon": -60.848667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -124891,7 +124891,7 @@
       ],
       "center_lat": 8.181667,
       "center_lon": -56.851667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -126891,7 +126891,7 @@
       ],
       "center_lat": 29.74225,
       "center_lon": -95.104217,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -128887,7 +128887,7 @@
       ],
       "center_lat": 22.6605,
       "center_lon": -97.684167,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -139115,7 +139115,7 @@
       ],
       "center_lat": 45.083667,
       "center_lon": 36.537667,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -139663,7 +139663,7 @@
       ],
       "center_lat": -1.217333,
       "center_lon": 116.769,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -144979,7 +144979,7 @@
       ],
       "center_lat": 24.357667,
       "center_lon": 52.652333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -148643,7 +148643,7 @@
       ],
       "center_lat": -39.326333,
       "center_lon": 143.360167,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -149279,7 +149279,7 @@
       ],
       "center_lat": 31.844017,
       "center_lon": -116.6256,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -152387,7 +152387,7 @@
       ],
       "center_lat": 14.693,
       "center_lon": -17.410833,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -152687,7 +152687,7 @@
       ],
       "center_lat": 24.507667,
       "center_lon": 52.951333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -158747,7 +158747,7 @@
       ],
       "center_lat": 39.950067,
       "center_lon": 0.043717,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -159347,7 +159347,7 @@
       ],
       "center_lat": 33.4265,
       "center_lon": 121.58,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -159491,7 +159491,7 @@
       ],
       "center_lat": 13.619,
       "center_lon": 121.224,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -160671,7 +160671,7 @@
       ],
       "center_lat": 13.58,
       "center_lon": 120.905,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -162371,7 +162371,7 @@
       ],
       "center_lat": 56.5355,
       "center_lon": 20.9945,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -166287,7 +166287,7 @@
       ],
       "center_lat": 31.641667,
       "center_lon": 34.526667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -166571,7 +166571,7 @@
       ],
       "center_lat": 33.8475,
       "center_lon": 131.211167,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -171663,7 +171663,7 @@
       ],
       "center_lat": 10.327667,
       "center_lon": 123.971167,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -174855,7 +174855,7 @@
       ],
       "center_lat": -9.24,
       "center_lon": 102.398333,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -175019,7 +175019,7 @@
       ],
       "center_lat": -38.34,
       "center_lon": 144.343333,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -177131,7 +177131,7 @@
       ],
       "center_lat": 9.973933,
       "center_lon": 76.229883,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -177271,7 +177271,7 @@
       ],
       "center_lat": 21.377,
       "center_lon": 111.453,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -183047,7 +183047,7 @@
       ],
       "center_lat": 6.316167,
       "center_lon": 2.591667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -188507,7 +188507,7 @@
       ],
       "center_lat": -36.846667,
       "center_lon": 174.146667,
-      "geometry_type": "LINE",
+      "geometry_type": "AREA",
       "has_coordinates": true
     },
     {
@@ -196407,7 +196407,7 @@
       ],
       "center_lat": 50.599533,
       "center_lon": -2.4477,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -198355,7 +198355,7 @@
       ],
       "center_lat": 23.236833,
       "center_lon": 116.8055,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -202083,7 +202083,7 @@
       ],
       "center_lat": 3.584333,
       "center_lon": 113.336333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -204759,7 +204759,7 @@
       ],
       "center_lat": 29.646,
       "center_lon": 32.434333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -206567,7 +206567,7 @@
       ],
       "center_lat": -23.991833,
       "center_lon": -46.306667,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -207243,7 +207243,7 @@
       ],
       "center_lat": 38.706667,
       "center_lon": 118.548333,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
@@ -207563,7 +207563,7 @@
       ],
       "center_lat": 57.2845,
       "center_lon": -5.5175,
-      "geometry_type": "AREA",
+      "geometry_type": "LINE",
       "has_coordinates": true
     },
     {
