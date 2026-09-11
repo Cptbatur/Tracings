@@ -424,7 +424,7 @@ async function handleFile(file) {
   }
 }
 
-// GEOMETRY ENGINE
+// GEOMETRY & DISTANCE ENGINE
 const R_NM = 3440.065;
 function toR(d) { return d * Math.PI / 180; }
 
@@ -434,11 +434,16 @@ function hvNM(la1, lo1, la2, lo2) {
   return 2 * R_NM * Math.asin(Math.sqrt(Math.min(1, a)));
 }
 
-function ptToRoute(plat, plon, wps) {
+function noticeMinDistToRoute(notice, wps) {
+  const allCoords = notice.coordinates || [];
+  if (!allCoords.length) return Infinity;
+
   let minD = Infinity;
-  for (let j = 0; j < wps.length; j++) {
-    const d = hvNM(plat, plon, wps[j].lat, wps[j].lon);
-    if (d < minD) minD = d;
+  for (const [la, lo] of allCoords) {
+    for (let j = 0; j < wps.length; j++) {
+      const d = hvNM(la, lo, wps[j].lat, wps[j].lon);
+      if (d < minD) minD = d;
+    }
   }
   return minD;
 }
@@ -455,12 +460,8 @@ async function runAnalysis() {
     const results = [];
     for (const notice of S.tpRaw) {
       if (!notice.has_coordinates) continue;
-      const coords = notice.coordinates || [];
-      const cLa = notice.center_lat ?? coords[0]?.[0];
-      const cLo = notice.center_lon ?? coords[0]?.[1];
-      if (cLa == null || cLo == null) continue;
 
-      const dist = ptToRoute(cLa, cLo, S.waypoints);
+      const dist = noticeMinDistToRoute(notice, S.waypoints);
       if (dist <= S.safetyDist) {
         const color = dist <= S.defXTD ? 'red' : 'yellow';
         results.push({ notice, color, distance: Math.round(dist * 10) / 10 });
