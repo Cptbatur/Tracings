@@ -178,13 +178,38 @@ function hvNM(la1, lo1, la2, lo2) {
   return 2 * R_NM * Math.asin(Math.sqrt(Math.min(1, a)));
 }
 
+/* Noktanın rota bacağına (segment) olan dikme / cross-track mesafesi */
+function ptToSegmentNM(plat, plon, la1, lo1, la2, lo2) {
+  const segLen = hvNM(la1, lo1, la2, lo2);
+  if (segLen < 1e-6) return hvNM(plat, plon, la1, lo1);
+
+  const meanLat = toR((la1 + la2 + plat) / 3);
+  const cosL = Math.cos(meanLat);
+
+  const px = (plon - lo1) * 60 * cosL;
+  const py = (plat - la1) * 60;
+  const dx = (lo2 - lo1) * 60 * cosL;
+  const dy = (la2 - la1) * 60;
+
+  const segSq = dx*dx + dy*dy;
+  if (segSq < 1e-6) return hvNM(plat, plon, la1, lo1);
+
+  const t = Math.max(0, Math.min(1, (px * dx + py * dy) / segSq));
+  const projLat = la1 + t * (la2 - la1);
+  const projLon = lo1 + t * (lo2 - lo1);
+
+  return hvNM(plat, plon, projLat, projLon);
+}
+
 function getNoticeDistance(notice, wps) {
   const coords = notice.coordinates || [];
   if (!coords.length) return Infinity;
+  if (wps.length < 2) return Infinity;
   let minD = Infinity;
+
   for (const [la, lo] of coords) {
-    for (const wp of wps) {
-      const d = hvNM(la, lo, wp.lat, wp.lon);
+    for (let i = 0; i < wps.length - 1; i++) {
+      const d = ptToSegmentNM(la, lo, wps[i].lat, wps[i].lon, wps[i+1].lat, wps[i+1].lon);
       if (d < minD) minD = d;
     }
   }
