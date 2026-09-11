@@ -366,9 +366,7 @@ function toast(msg, type = '', ms = 3500) {
   _toastTimer = setTimeout(() => { el.style.display = 'none'; }, ms);
 }
 
-// ══════════════════════════════════════════════════════════════
-// DATA FETCHING (LOCAL JSON)
-// ══════════════════════════════════════════════════════════════
+// DATA FETCHING
 async function fetchStatusAndData() {
   try {
     const r = await fetch(DATA_URL);
@@ -387,13 +385,10 @@ async function fetchStatusAndData() {
     document.getElementById('db-stat').innerHTML = '<span style="color:var(--yellow-l)">⚠️ Error</span>';
     document.getElementById('stat-dot').style.background = 'var(--yellow)';
     document.getElementById('stat-txt').textContent = 'JSON Offline';
-    console.error('JSON fetch error:', e);
   }
 }
 
-// ══════════════════════════════════════════════════════════════
 // ROUTE PARSERS
-// ══════════════════════════════════════════════════════════════
 function parseXML(txt) {
   txt = txt.replace(/ xmlns(?::\w+)?="[^"]*"/g, '');
   return new DOMParser().parseFromString(txt, 'application/xml');
@@ -495,9 +490,7 @@ async function handleFile(file) {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// GEOMETRY & ANALYSIS
-// ══════════════════════════════════════════════════════════════
+// GEOMETRY ENGINE
 const R_NM = 3440.065;
 function toR(d) { return d * Math.PI / 180; }
 
@@ -555,15 +548,16 @@ async function runAnalysis() {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// MAP & REPORT
-// ══════════════════════════════════════════════════════════════
+// MAP & FULL GEOMETRY RENDERER
 function initMap() {
   const map = L.map('lmap', { center:[50,0], zoom:5 });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
   L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { opacity:0.8 }).addTo(map);
   S.map = map;
   S.mapReady = true;
+
+  // Rota yoksa da açılışta tüm T&P geometrilerini haritaya çiz
+  renderAllNoticesInitial();
 }
 
 function renderRoute() {
@@ -573,26 +567,45 @@ function renderRoute() {
   S.map.fitBounds(S.routeLayer.getBounds(), { padding:[30,30] });
 }
 
+function renderAllNoticesInitial() {
+  if (!S.tpRaw.length) return;
+  
+  // Rota yüklenmeden önce de haritadaki Poligon/Çizgi/Nokta şekillerini çiz
+  for (const notice of S.tpRaw) {
+    drawNoticeShape(notice, 'yellow');
+  }
+}
+
+function drawNoticeShape(notice, color) {
+  const coords = notice.coordinates || [];
+  const gtype = notice.geometry_type || 'POINT';
+  const cGroups = notice.coordinate_groups || (coords.length > 0 ? [coords] : []);
+  const hex = color === 'red' ? '#e53e3e' : '#d69e2e';
+
+  if (!cGroups.length) return;
+
+  const layerGroup = L.layerGroup();
+  for (const cg of cGroups) {
+    if (!cg.length) continue;
+    const ll = cg.map(([la,lo]) => [la,lo]);
+
+    if (gtype === 'LINE' && cg.length >= 2) {
+      L.polyline(ll, { color:hex, weight:2.5, dashArray:'6,4' }).addTo(layerGroup);
+    } else if (gtype === 'AREA' && cg.length >= 3) {
+      L.polygon(ll, { color:hex, weight:1.5, fillColor:hex, fillOpacity:0.2 }).addTo(layerGroup);
+    } else {
+      L.circleMarker(ll[0], { radius:5, fillColor:hex, color:'#fff', weight:1, fillOpacity:0.8 }).addTo(layerGroup);
+    }
+  }
+  layerGroup.addTo(S.map);
+}
+
 function renderMarkers() {
   Object.values(S.markerMap).forEach(m => S.map.removeLayer(m));
   S.markerMap = {};
 
   for (const r of S.results) {
-    const { notice, color } = r;
-    const cLa = notice.center_lat ?? notice.coordinates?.[0]?.[0];
-    const cLo = notice.center_lon ?? notice.coordinates?.[0]?.[1];
-    if (cLa == null || cLo == null) continue;
-
-    const id = notice.id || notice.number;
-    const marker = L.circleMarker([cLa, cLo], {
-      radius: 7,
-      fillColor: color === 'red' ? '#e53e3e' : '#d69e2e',
-      color: '#fff',
-      weight: 1.5,
-      fillOpacity: 0.9
-    }).bindPopup(`<b>${id}</b><br>${notice.title || notice.subject || 'T&P Notice'}<br>Dist: ${r.distance} NM`).addTo(S.map);
-
-    S.markerMap[id] = marker;
+    drawNoticeShape(r.notice, r.color);
   }
 }
 
@@ -622,4 +635,3 @@ switchTab('import');
 </script>
 </body>
 </html>
-EOF
