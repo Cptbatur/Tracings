@@ -56,30 +56,36 @@ def detect_geometry_type(text, coords):
         
     txt_low = text.lower()
     
+    # Açıkça geometrik sınır çizen UKHO kalıpları (geniş kapsam)
+    # "bounded by the following positions", "bounded by lines joining",
+    # "within an area bounded", "enclosed by", "limits defined by" vb.
+    has_explicit_area = (
+        'bounded by' in txt_low or
+        'within an area' in txt_low or
+        'enclosed by' in txt_low or
+        'limits defined by' in txt_low or
+        'within an area defined' in txt_low
+    ) and c_count >= 3
+
     # 1. Müstakil derinlik, sığlık ve ölçüm cihazı listeleri: Kesinlikle POINT
-    # (Örn: Celtic Sea ölçüm cihazları, sahil boyunca derinlik sondajları)
+    # Açıkça sınırlı bir alan tanımı yoksa bu tip ilanlar poligon değil nokta listesidir
     is_discrete_list = any(k in txt_low for k in [
         'scientific instruments', 'measuring instruments', 'instruments have been established',
         'depths less than charted', 'drying heights', 'numerous depths', 'shoal'
     ])
-    has_explicit_area = any(k in txt_low for k in [
-        'bounded by lines joining', 'within an area bounded', 'area bounded by',
-        'within the area bounded', 'enclosed by lines joining', 'within an area joining',
-        'in the area bounded'
-    ])
-    
     if is_discrete_list and not has_explicit_area:
         return 'POINT'
 
-    # 2. Hat/Çizgi Geometrisi: Kablo ve boru hatları (asla mesafeden dolayı noktaya çevrilmez)
+    # 2. Hat/Çizgi Geometrisi: Kablo ve boru hatları
+    # Asla koordinat sayısı veya mesafeden dolayı noktaya çevrilmez
     is_line = any(k in txt_low for k in [
         'cable', 'pipeline', 'along a line joining', 'line joining', 'track joining', 'route joining'
     ])
     if is_line and not has_explicit_area:
         return 'LINE'
         
-    # 3. Alan/Poligon Geometrisi: Sadece açıkça geometrik sınır bildiren ifadelerde
-    if has_explicit_area and c_count >= 3:
+    # 3. Alan/Poligon Geometrisi: Açıkça geometrik sınır çizen ilanlar
+    if has_explicit_area:
         return 'AREA'
         
     # 4. Açık sınır içermeyen şamandıra ve fener listeleri: POINT
