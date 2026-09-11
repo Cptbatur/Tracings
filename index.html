@@ -26,7 +26,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
   font-size:16px;line-height:1.5}
 #app{display:flex;flex-direction:column;height:100%;max-height:100vh}
 
-/* HEADER */
 #hdr{height:var(--hdr-h);background:var(--card);border-bottom:1px solid var(--border);
   display:flex;align-items:center;padding:0 14px;flex-shrink:0;gap:10px}
 #hdr-logo{width:34px;height:34px;background:var(--accent);border-radius:9px;
@@ -37,7 +36,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
 #stat-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--dim);margin-right:4px;vertical-align:middle}
 #stat-txt{font-size:11px;color:var(--dim)}
 
-/* TABS */
 #tab-wrap{flex:1;overflow:hidden;position:relative}
 .tab{display:none;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .tab.active{display:block}
@@ -45,7 +43,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
 #tab-report{display:none;flex-direction:column}
 #tab-report.active{display:flex}
 
-/* BOTTOM NAV */
 #bnav{height:var(--nav-h);background:var(--card);border-top:1px solid var(--border);
   display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
 .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -55,12 +52,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
 .nbtn.active{color:var(--accent-l)}
 .nbtn svg{width:22px;height:22px}
 
-/* CARD */
 .card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:15px}
 .ctitle{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;
   letter-spacing:1.1px;margin-bottom:12px}
 
-/* IMPORT TAB */
 #tab-import{padding:14px;gap:14px;flex-direction:column}
 #tab-import.active{display:flex}
 
@@ -98,7 +93,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
 #analyze-btn:disabled{opacity:.35;cursor:not-allowed}
 #analyze-btn.loading-btn{opacity:.7;cursor:not-allowed}
 
-/* LOADING */
 #loader{display:none;position:fixed;inset:0;background:rgba(10,15,26,.88);z-index:2000;
   align-items:center;justify-content:center;flex-direction:column;gap:15px}
 #loader.on{display:flex}
@@ -107,7 +101,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
 @keyframes sp{to{transform:rotate(360deg)}}
 #loader-txt{color:var(--dim);font-size:14px;text-align:center;max-width:240px}
 
-/* TOAST */
 #toast{display:none;position:fixed;top:calc(var(--hdr-h)+10px);left:12px;right:12px;
   background:var(--card2);border:1px solid var(--border);border-radius:11px;
   padding:12px 16px;font-size:14px;z-index:1900;animation:tin .2s ease}
@@ -116,7 +109,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
 #toast.warn{border-color:var(--yellow);color:var(--yellow-l)}
 @keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 
-/* MAP */
 #map-wrap{height:100%;position:relative}
 #lmap{height:100%;background:#0d1420}
 .leaflet-container{background:#0d1420!important}
@@ -142,7 +134,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
   padding:7px 12px;font-size:12px;color:var(--dim);display:none;backdrop-filter:blur(4px)}
 #map-badge.on{display:block}
 
-/* REPORT */
 #rpt-hdr{padding:11px 14px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
 #rpt-pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px}
 .pill{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;
@@ -311,13 +302,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
   </nav>
 </div>
 
-<!-- LOADING OVERLAY -->
 <div id="loader">
   <div class="spin"></div>
   <div id="loader-txt">Loading…</div>
 </div>
 
-<!-- TOAST -->
 <div id="toast"></div>
 
 <script>
@@ -336,7 +325,6 @@ const S = {
   corridorLayers: [],
   routeLayer: null,
   wpMarkers: [],
-  allNoticeLayerGroup: null
 };
 
 const DATA_URL = './data/tp_notices.json';
@@ -348,14 +336,7 @@ function switchTab(t) {
   document.getElementById('n-' + t).classList.add('active');
   if (t === 'map') {
     if (!S.mapReady) initMap();
-    else {
-      setTimeout(() => {
-        S.map && S.map.invalidateSize();
-        if (S.routeLayer) {
-          S.map.fitBounds(S.routeLayer.getBounds(), { padding:[50,50] });
-        }
-      }, 100);
-    }
+    else setTimeout(() => S.map && S.map.invalidateSize(), 80);
   }
 }
 
@@ -396,7 +377,7 @@ async function fetchStatusAndData() {
   }
 }
 
-// ROUTE PARSERS
+// PARSERS
 function parseXML(txt) {
   txt = txt.replace(/ xmlns(?::\w+)?="[^"]*"/g, '');
   return new DOMParser().parseFromString(txt, 'application/xml');
@@ -406,16 +387,26 @@ function parseRTZ(txt) {
   const doc = parseXML(txt);
   if (doc.querySelector('parsererror')) throw new Error('Invalid XML in RTZ');
   let routeName = doc.querySelector('routeInfo')?.getAttribute('routeName') || '';
+  const defXtdEl = doc.querySelector('routeInfo, defaultXtd');
+  const defXtdRoute = parseFloat(defXtdEl?.getAttribute('defaultXtd') || '0') || 0;
   const wps = [];
+  let hasFileXTD = false;
+
   doc.querySelectorAll('waypoint').forEach(w => {
     const pos = w.querySelector('position');
     const lat = parseFloat(pos ? pos.getAttribute('lat') : w.getAttribute('lat'));
     const lon = parseFloat(pos ? pos.getAttribute('lon') : w.getAttribute('lon'));
     if (isNaN(lat) || isNaN(lon)) return;
     const name = w.getAttribute('name') || ('WP' + (wps.length + 1));
-    wps.push({ lat, lon, name, xtd: S.defXTD });
+    const leg = w.querySelector('leg');
+    let xtd = defXtdRoute || S.defXTD;
+    if (leg) {
+      const v = parseFloat(leg.getAttribute('xtd') || leg.getAttribute('starboardXTD') || leg.getAttribute('portsideXTD') || '0');
+      if (v > 0) { xtd = v; hasFileXTD = true; }
+    }
+    wps.push({ lat, lon, name, xtd: xtd || S.defXTD });
   });
-  return { wps, routeName, xtdSrc: 'Default ' + S.defXTD + ' NM' };
+  return { wps, routeName, xtdSrc: hasFileXTD ? 'RTZ file (per leg)' : (defXtdRoute > 0 ? 'RTZ default' : ('Default ' + S.defXTD + ' NM')) };
 }
 
 async function parseRTZP(buf) {
@@ -498,7 +489,9 @@ async function handleFile(file) {
   }
 }
 
-// GEOMETRY ENGINE
+// ══════════════════════════════════════════════════════════════
+// ADVANCED GEOMETRY ENGINE (NavCheck_AI_v3 Full Port)
+// ══════════════════════════════════════════════════════════════
 const R_NM = 3440.065;
 function toR(d) { return d * Math.PI / 180; }
 
@@ -508,47 +501,225 @@ function hvNM(la1, lo1, la2, lo2) {
   return 2 * R_NM * Math.asin(Math.sqrt(Math.min(1, a)));
 }
 
-function ptToRoute(plat, plon, wps) {
-  let minD = Infinity;
-  for (let j = 0; j < wps.length; j++) {
-    const d = hvNM(plat, plon, wps[j].lat, wps[j].lon);
-    if (d < minD) minD = d;
-  }
-  return minD;
+function brg(la1, lo1, la2, lo2) {
+  const dLo = toR(lo2 - lo1);
+  const y = Math.sin(dLo) * Math.cos(toR(la2));
+  const x = Math.cos(toR(la1))*Math.sin(toR(la2)) - Math.sin(toR(la1))*Math.cos(toR(la2))*Math.cos(dLo);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
+function offsetPt(la, lo, brgDeg, nm) {
+  const d = nm / R_NM, b = toR(brgDeg);
+  const la1 = toR(la), lo1 = toR(lo);
+  const la2 = Math.asin(Math.sin(la1)*Math.cos(d) + Math.cos(la1)*Math.sin(d)*Math.cos(b));
+  const lo2 = lo1 + Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(la1), Math.cos(d)-Math.sin(la1)*Math.sin(la2));
+  return [la2*180/Math.PI, lo2*180/Math.PI];
+}
+
+function ptToSeg(plat, plon, wpA, wpB) {
+  const segLen = hvNM(wpA.lat, wpA.lon, wpB.lat, wpB.lon);
+  if (segLen < 1e-6) return { dist: hvNM(plat, plon, wpA.lat, wpA.lon), legXTD: wpA.xtd || S.defXTD };
+  const bAB = brg(wpA.lat, wpA.lon, wpB.lat, wpB.lon);
+  const bAP = brg(wpA.lat, wpA.lon, plat, plon);
+  const dAP = hvNM(wpA.lat, wpA.lon, plat, plon);
+  const angle = toR(bAP - bAB);
+  const dat = dAP * Math.cos(angle);
+  const dxt = dAP * Math.sin(angle);
+  let dist;
+  if (dat < 0) dist = dAP;
+  else if (dat > segLen) dist = hvNM(plat, plon, wpB.lat, wpB.lon);
+  else dist = Math.abs(dxt);
+  return { dist, legXTD: wpA.xtd || S.defXTD };
+}
+
+function ptToRoute(plat, plon, wps) {
+  let best = { dist: Infinity, legXTD: S.defXTD };
+  for (let j = 0; j < wps.length - 1; j++) {
+    const r = ptToSeg(plat, plon, wps[j], wps[j+1]);
+    if (r.dist < best.dist) best = r;
+  }
+  return best;
+}
+
+function seg2dIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
+  function c2(ux, uy, vx, vy) { return ux*vy - uy*vx; }
+  const rx = bx-ax, ry = by-ay, sx = dx-cx, sy = dy-cy;
+  const den = c2(rx,ry,sx,sy);
+  if (Math.abs(den) < 1e-12) return false;
+  const tx = cx-ax, ty = cy-ay;
+  const t = c2(tx,ty,sx,sy)/den, u = c2(tx,ty,rx,ry)/den;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
+function tpSegToRoute(c1, c2, wps) {
+  let best = { dist: Infinity, legXTD: S.defXTD };
+  for (let j = 0; j < wps.length - 1; j++) {
+    const wpA = wps[j], wpB = wps[j+1];
+    if (seg2dIntersect(c1[0],c1[1],c2[0],c2[1],wpA.lat,wpA.lon,wpB.lat,wpB.lon)) {
+      return { dist: 0, legXTD: wpA.xtd || S.defXTD };
+    }
+    const d1 = ptToSeg(c1[0],c1[1],wpA,wpB);
+    const d2 = ptToSeg(c2[0],c2[1],wpA,wpB);
+    const xtd = wpA.xtd || S.defXTD;
+    const d3 = { dist: ptToSeg(wpA.lat,wpA.lon,{lat:c1[0],lon:c1[1],xtd},{lat:c2[0],lon:c2[1],xtd}).dist, legXTD: xtd };
+    const d4 = { dist: ptToSeg(wpB.lat,wpB.lon,{lat:c1[0],lon:c1[1],xtd},{lat:c2[0],lon:c2[1],xtd}).dist, legXTD: wpA.xtd||S.defXTD };
+    for (const r of [d1,d2,d3,d4]) if (r.dist < best.dist) best = r;
+  }
+  return best;
+}
+
+function pip(lat, lon, coords) {
+  let inside = false, n = coords.length, j = n - 1;
+  for (let i = 0; i < n; j = i++) {
+    const yi=coords[i][0],xi=coords[i][1],yj=coords[j][0],xj=coords[j][1];
+    if (((yi>lat)!==(yj>lat)) && (lon<(xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+
+function legHitsPolygon(wpA, wpB, coords) {
+  if (pip(wpA.lat,wpA.lon,coords)) return true;
+  if (pip(wpB.lat,wpB.lon,coords)) return true;
+  const n = coords.length;
+  for (let i = 0; i < n; i++) {
+    const nxt = (i+1)%n;
+    if (seg2dIntersect(wpA.lat,wpA.lon,wpB.lat,wpB.lon, coords[i][0],coords[i][1],coords[nxt][0],coords[nxt][1])) return true;
+  }
+  return false;
+}
+
+function calcDist(notice, wps) {
+  const allCoords = notice.coordinates;
+  const cGroups = notice.coordinate_groups || (allCoords && allCoords.length > 0 ? [allCoords] : []);
+  const gtype  = notice.geometry_type || 'POINT';
+  const defRes = { dist: Infinity, legXTD: S.defXTD };
+
+  if (!allCoords || allCoords.length === 0) {
+    if (notice.center_lat != null && notice.center_lon != null) {
+      return ptToRoute(notice.center_lat, notice.center_lon, wps);
+    }
+    return defRes;
+  }
+
+  let bestResult = defRes;
+  for (const coords of cGroups) {
+    if (!coords || coords.length === 0) continue;
+    const result = _calcDistForGroup(coords, gtype, wps);
+    if (result.dist < bestResult.dist) bestResult = result;
+  }
+  return bestResult;
+}
+
+function _calcDistForGroup(coords, gtype, wps) {
+  const defRes = { dist: Infinity, legXTD: S.defXTD };
+
+  switch (gtype) {
+    case 'POINT': {
+      let best = defRes;
+      for (const [la, lo] of coords) {
+        const r = ptToRoute(la, lo, wps);
+        if (r.dist < best.dist) best = r;
+      }
+      return best;
+    }
+    case 'LINE': {
+      let best = defRes;
+      for (let i = 0; i < coords.length - 1; i++) {
+        const r = tpSegToRoute(coords[i], coords[i+1], wps);
+        if (r.dist < best.dist) best = r;
+        if (r.dist === 0) break;
+      }
+      for (const [la, lo] of coords) {
+        const r = ptToRoute(la, lo, wps);
+        if (r.dist < best.dist) best = r;
+      }
+      return best;
+    }
+    case 'AREA': {
+      for (let j = 0; j < wps.length - 1; j++) {
+        if (legHitsPolygon(wps[j], wps[j+1], coords)) {
+          return { dist: 0, legXTD: wps[j].xtd || S.defXTD };
+        }
+      }
+      let best = defRes;
+      const n = coords.length;
+      for (let i = 0; i < n; i++) {
+        const nxt = (i+1)%n;
+        const r = tpSegToRoute(coords[i], coords[nxt], wps);
+        if (r.dist < best.dist) best = r;
+      }
+      return best;
+    }
+    case 'MULTI_POINT':
+    default: {
+      let best = defRes;
+      for (const [la, lo] of coords) {
+        const r = ptToRoute(la, lo, wps);
+        if (r.dist < best.dist) best = r;
+      }
+      return best;
+    }
+  }
+}
+
+function routeBBox(wps, padNM) {
+  const pad = padNM / 60;
+  const lats = wps.map(w => w.lat), lons = wps.map(w => w.lon);
+  return {
+    minLat: Math.min(...lats) - pad, maxLat: Math.max(...lats) + pad,
+    minLon: Math.min(...lons) - pad, maxLon: Math.max(...lons) + pad,
+  };
+}
+
+function inBBox(notice, bb) {
+  const coords = notice.coordinates;
+  if (coords && coords.length > 0) {
+    return coords.some(([la,lo]) => la>=bb.minLat && la<=bb.maxLat && lo>=bb.minLon && lo<=bb.maxLon);
+  }
+  const la = notice.center_lat, lo = notice.center_lon;
+  if (la != null && lo != null) return la>=bb.minLat && la<=bb.maxLat && lo>=bb.minLon && lo<=bb.maxLon;
+  return false;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ANALYSIS ROUTINE
+// ══════════════════════════════════════════════════════════════
 async function runAnalysis() {
-  if (S.waypoints.length < 2) return;
+  if (S.waypoints.length < 2) { toast('Upload a route file first', 'err'); return; }
   S.safetyDist = parseFloat(document.getElementById('inp-safety').value) || 15;
-  
-  setLoading(true, 'Analyzing route against T&P database…');
+  S.defXTD     = parseFloat(document.getElementById('inp-xtd').value)    || 0.1;
+
+  setLoading(true, 'Analyzing T&P notices…');
   try {
     if (!S.tpRaw.length) await fetchStatusAndData();
     
-    const results = [];
-    for (const notice of S.tpRaw) {
-      const coords = notice.coordinates || [];
-      const cLa = notice.center_lat ?? coords[0]?.[0];
-      const cLo = notice.center_lon ?? coords[0]?.[1];
-      if (cLa == null || cLo == null) continue;
+    const bb = routeBBox(S.waypoints, S.safetyDist);
+    const filtered = S.tpRaw.filter(n => inBBox(n, bb));
 
-      const dist = ptToRoute(cLa, cLo, S.waypoints);
-      if (dist <= S.safetyDist) {
-        const color = dist <= S.defXTD ? 'red' : 'yellow';
-        results.push({ notice, color, distance: Math.round(dist * 10) / 10 });
-      }
+    const results = [];
+    for (const notice of filtered) {
+      const { dist, legXTD } = calcDist(notice, S.waypoints);
+      if (!isFinite(dist)) continue;
+      const color = dist <= legXTD ? 'red'
+                  : dist <= S.safetyDist ? 'yellow'
+                  : 'green';
+      results.push({ notice, color, distance: Math.round(dist * 100) / 100, legXTD });
     }
 
-    results.sort((a,b) => a.distance - b.distance);
+    const ord = { red:0, yellow:1, green:2 };
+    results.sort((a,b) => ord[a.color] - ord[b.color] || a.distance - b.distance);
     S.results = results;
 
     if (!S.mapReady) initMap();
     renderRoute();
+    renderCorridors();
     renderMarkers();
     renderReport();
     switchTab('map');
 
-    toast(`Analysis complete: ${results.length} notices found`, 'ok');
+    const rc = results.filter(r=>r.color==='red').length;
+    const yc = results.filter(r=>r.color==='yellow').length;
+    toast(`Done: ${rc} Critical · ${yc} Caution · ${results.length - rc - yc} Clear`, rc > 0 ? 'err' : 'ok', 4500);
   } catch (e) {
     toast('Analysis failed: ' + e.message, 'err');
   } finally {
@@ -556,90 +727,213 @@ async function runAnalysis() {
   }
 }
 
-// MAP & GEOMETRY RENDERER
+// ══════════════════════════════════════════════════════════════
+// MAP RENDERER
+// ══════════════════════════════════════════════════════════════
 function initMap() {
-  const map = L.map('lmap', { center:[35, 15], zoom:3 }); // Geniş Akdeniz/Avrupa Kuş Bakışı
+  const map = L.map('lmap', { center:[50,0], zoom:5 });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
   L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { opacity:0.8 }).addTo(map);
   S.map = map;
   S.mapReady = true;
-  S.allNoticeLayerGroup = L.layerGroup().addTo(map);
+}
 
-  renderAllNoticesInitial();
+function clearMapLayers() {
+  if (S.routeLayer) { S.map.removeLayer(S.routeLayer); S.routeLayer = null; }
+  S.corridorLayers.forEach(l => S.map.removeLayer(l));
+  S.corridorLayers = [];
+  S.wpMarkers.forEach(m => S.map.removeLayer(m));
+  S.wpMarkers = [];
+  Object.values(S.markerMap).forEach(g => {
+    if (g.marker) S.map.removeLayer(g.marker);
+    if (g.shape)  S.map.removeLayer(g.shape);
+  });
+  S.markerMap = {};
 }
 
 function renderRoute() {
-  if (S.routeLayer) S.map.removeLayer(S.routeLayer);
-  const ll = S.waypoints.map(w => [w.lat, w.lon]);
-  S.routeLayer = L.polyline(ll, { color:'#e8edf2', weight:3.5 }).addTo(S.map);
-  
-  // Rotayı tam kuş bakışı kadraja oturt
-  S.map.fitBounds(S.routeLayer.getBounds(), { padding:[60,60] });
+  clearMapLayers();
+  const wps = S.waypoints;
+  if (wps.length < 2) return;
+
+  const ll = wps.map(w => [w.lat, w.lon]);
+  S.routeLayer = L.polyline(ll, { color:'#e8edf2', weight:2.5, opacity:.9 }).addTo(S.map);
+
+  wps.forEach((w, i) => {
+    const m = L.circleMarker([w.lat, w.lon], {
+      radius:5, fillColor:'#4D6F8A', color:'#fff', weight:1.5, fillOpacity:1,
+    }).bindTooltip(w.name || ('WP'+(i+1)), { direction:'top', permanent:false }).addTo(S.map);
+    S.wpMarkers.push(m);
+  });
+
+  S.map.fitBounds(S.routeLayer.getBounds(), { padding:[50,50] });
 }
 
-function renderAllNoticesInitial() {
-  if (!S.tpRaw.length) return;
-  S.allNoticeLayerGroup.clearLayers();
-  
-  for (const notice of S.tpRaw) {
-    drawNoticeShape(notice, 'yellow', S.allNoticeLayerGroup);
+function renderCorridors() {
+  const wps = S.waypoints;
+  for (let i = 0; i < wps.length - 1; i++) {
+    const a = wps[i], b = wps[i+1];
+    const xtd = Math.min(a.xtd||S.defXTD, b.xtd||S.defXTD);
+    const bAB = brg(a.lat, a.lon, b.lat, b.lon);
+    const p1 = offsetPt(a.lat,a.lon,(bAB+90)%360,xtd);
+    const p2 = offsetPt(b.lat,b.lon,(bAB+90)%360,xtd);
+    const p3 = offsetPt(b.lat,b.lon,(bAB-90+360)%360,xtd);
+    const p4 = offsetPt(a.lat,a.lon,(bAB-90+360)%360,xtd);
+    const layer = L.polygon([p1,p2,p3,p4], {
+      color:'#4D6F8A', weight:1, opacity:.45,
+      fillColor:'#4D6F8A', fillOpacity:.12, dashArray:'5,5',
+    }).addTo(S.map);
+    S.corridorLayers.push(layer);
   }
 }
 
-function drawNoticeShape(notice, color, targetGroup) {
-  const coords = notice.coordinates || [];
-  const gtype = notice.geometry_type || 'POINT';
-  const cGroups = notice.coordinate_groups || (coords.length > 0 ? [coords] : []);
-  const hex = color === 'red' ? '#e53e3e' : '#d69e2e';
+const C = { red:'#e53e3e', yellow:'#d69e2e', green:'#38a169' };
+const LABEL = { red:'🔴 CRITICAL', yellow:'🟡 CAUTION', green:'🟢 CLEAR' };
 
-  if (!cGroups.length) return;
+function mkIcon(color) {
+  const hex = C[color];
+  return L.divIcon({
+    className:'',
+    html:`<div style="width:14px;height:14px;border-radius:50%;background:${hex};border:2px solid rgba(255,255,255,.45);box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>`,
+    iconSize:[14,14], iconAnchor:[7,7],
+  });
+}
 
-  const grp = targetGroup || S.map;
-  for (const cg of cGroups) {
-    if (!cg.length) continue;
-    const ll = cg.map(([la,lo]) => [la,lo]);
-
-    if (gtype === 'LINE' && cg.length >= 2) {
-      L.polyline(ll, { color:hex, weight:3, dashArray:'6,4' }).addTo(grp);
-    } else if (gtype === 'AREA' && cg.length >= 3) {
-      L.polygon(ll, { color:hex, weight:2, fillColor:hex, fillOpacity:0.25 }).addTo(grp);
-    } else {
-      L.circleMarker(ll[0], { radius:5, fillColor:hex, color:'#fff', weight:1, fillOpacity:0.85 }).addTo(grp);
-    }
-  }
+function popupHTML(r) {
+  const { notice, color, distance } = r;
+  const id = notice.id || (notice.number + '(' + notice.type + ')/' + notice.year);
+  const distStr = distance === 0 ? 'Intersects / Inside corridor' : distance + ' NM from route';
+  const txt = (notice.text || '').substring(0, 700);
+  return `
+    <div class="pp-id">${id}</div>
+    <div class="pp-badge ${color}">${LABEL[color]}</div>
+    <div class="pp-title">${notice.title || notice.subject || '—'}</div>
+    <div class="pp-dist">📍 ${distStr}</div>
+    <div class="pp-type">Type: ${notice.geometry_type||'?'} · ${notice.type==='T'?'Temporary':'Preliminary'} · ${notice.region||''}</div>
+    ${txt ? `<div class="pp-txt">${txt}${notice.text && notice.text.length>700?'…':''}</div>` : ''}`;
 }
 
 function renderMarkers() {
-  if (S.allNoticeLayerGroup) S.allNoticeLayerGroup.clearLayers();
-  Object.values(S.markerMap).forEach(m => S.map.removeLayer(m));
-  S.markerMap = {};
-
+  let shownCount = 0;
   for (const r of S.results) {
-    drawNoticeShape(r.notice, r.color, S.map);
+    const { notice, color } = r;
+    const coords = notice.coordinates || [];
+    const gtype  = notice.geometry_type || 'POINT';
+    const hex    = C[color];
+
+    const cLa = notice.center_lat ?? coords[0]?.[0];
+    const cLo = notice.center_lon ?? coords[0]?.[1];
+    if (cLa == null || cLo == null) continue;
+
+    const group = {};
+    const cGroups = notice.coordinate_groups || (coords.length > 0 ? [coords] : []);
+    if (cGroups.length > 0) {
+      const layerGroup = L.layerGroup();
+      for (const cg of cGroups) {
+        if (cg.length < 1) continue;
+        const ll = cg.map(([la,lo]) => [la,lo]);
+
+        if (gtype === 'LINE' && cg.length >= 2) {
+          L.polyline(ll, { color:hex, weight:2.5, opacity:.7, dashArray:'8,5' }).addTo(layerGroup);
+        } else if (gtype === 'AREA' && cg.length >= 3) {
+          L.polygon(ll, { color:hex, weight:2, opacity:.8, fillColor:hex, fillOpacity: color==='red' ? .22 : .10 }).addTo(layerGroup);
+        } else if (cg.length === 1) {
+          L.circleMarker(ll[0], { radius:5, fillColor:hex, color:'#fff', weight:1.5, fillOpacity:.85 }).addTo(layerGroup);
+        } else {
+          cg.forEach(([la,lo]) => {
+            L.circleMarker([la,lo], { radius:4, fillColor:hex, color:'#fff', weight:1, fillOpacity:.75 }).addTo(layerGroup);
+          });
+        }
+      }
+      layerGroup.addTo(S.map);
+      group.shape = layerGroup;
+    }
+
+    const id = notice.id || (notice.number + '(' + notice.type + ')/' + notice.year);
+    group.marker = L.marker([cLa, cLo], { icon:mkIcon(color) })
+      .bindPopup(popupHTML(r), { maxWidth:300 })
+      .addTo(S.map);
+
+    S.markerMap[id] = group;
+    shownCount++;
   }
+
+  const rc = S.results.filter(r=>r.color==='red').length;
+  const mb = document.getElementById('map-badge');
+  mb.textContent = shownCount + ' notices · ' + rc + ' critical';
+  mb.classList.add('on');
+}
+
+function zoomToNotice(id) {
+  switchTab('map');
+  setTimeout(() => {
+    const g = S.markerMap[id];
+    if (g && g.marker) {
+      S.map.setView(g.marker.getLatLng(), 11, { animate:true });
+      g.marker.openPopup();
+    }
+  }, 120);
+}
+
+// ══════════════════════════════════════════════════════════════
+// REPORT RENDERER
+// ══════════════════════════════════════════════════════════════
+function toggleGreen() {
+  S.showGreen = !S.showGreen;
+  document.getElementById('tog-green').textContent = S.showGreen ? 'Hide Clear' : 'Show Clear';
+  document.querySelectorAll('.g-item').forEach(el => el.classList.toggle('hidden', !S.showGreen));
 }
 
 function renderReport() {
+  const res = S.results;
+  const rc = res.filter(r=>r.color==='red').length;
+  const yc = res.filter(r=>r.color==='yellow').length;
+  const gc = res.filter(r=>r.color==='green').length;
+  document.getElementById('cnt-r').textContent = rc;
+  document.getElementById('cnt-y').textContent = yc;
+  document.getElementById('cnt-g').textContent = gc;
+
   const list = document.getElementById('rpt-list');
-  if (!S.results.length) {
-    list.innerHTML = '<div class="empty-msg"><div class="empty-title">Route Clear</div><div>No T&P notices near route.</div></div>';
+  if (!res.length) {
+    list.innerHTML = `<div class="empty-msg">
+      <div class="empty-icon">✅</div>
+      <div class="empty-title">Route Clear</div>
+      <div class="empty-desc">No T&P notices found within ${S.safetyDist} NM of your route.</div>
+    </div>`;
     return;
   }
 
-  list.innerHTML = S.results.map(r => `
-    <div class="ritem">
-      <div class="rdot rdot-${r.color === 'red' ? 'r' : 'y'}"></div>
+  list.innerHTML = res.map(r => {
+    const { notice, color, distance } = r;
+    const id = notice.id || (notice.number + '(' + notice.type + ')/' + notice.year);
+    const distStr = distance === 0 ? 'ON ROUTE' : distance.toFixed(1);
+    const distUnit = distance === 0 ? '' : 'NM';
+    const isG = color === 'green';
+    const noticeType = notice.type === 'T' ? 'Temp' : 'Prel';
+    const geomType = notice.geometry_type || '';
+    return `<div class="ritem ${isG?'g-item':''}" onclick="zoomToNotice('${id.replace(/'/g,"\\'")}')">
+      <div class="rdot rdot-${color[0]}"></div>
       <div class="rbody">
-        <div class="rid">${r.notice.id || r.notice.number}</div>
-        <div class="rtitle">${r.notice.title || r.notice.subject || '—'}</div>
+        <div class="rid">${id}</div>
+        <div class="rtitle">${notice.title || notice.subject || '—'}</div>
+        <div class="rmeta">
+          <span>${noticeType}</span>
+          <span>${notice.region || ''}</span>
+          <span>${geomType}</span>
+        </div>
       </div>
-      <div class="rdist"><div class="rdval">${r.distance}</div><div class="rdunit">NM</div></div>
-    </div>
-  `).join('');
+      <div class="rdist">
+        <div class="rdval ${color[0]}">${distStr}</div>
+        <div class="rdunit">${distUnit}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-// LISTENERS
 document.getElementById('file-inp').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+document.getElementById('inp-safety').addEventListener('change', e => { S.safetyDist = parseFloat(e.target.value) || 15; });
+document.getElementById('inp-xtd').addEventListener('change', e => { S.defXTD = parseFloat(e.target.value) || 0.1; });
+
 fetchStatusAndData();
 switchTab('import');
 </script>
