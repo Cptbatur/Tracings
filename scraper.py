@@ -56,17 +56,38 @@ def detect_geometry_type(text, coords):
         
     txt_low = text.lower()
     
-    # Noktalar arası mesafe çok büyükse bozuk poligon oluşturmayı önle
-    if c_count >= 3:
-        la1, lo1 = coords[0]
-        la2, lo2 = coords[-1]
-        if abs(la1 - la2) > 1.5 or abs(lo1 - lo2) > 2.0:
-            return 'POINT'
-            
-    if any(k in txt_low for k in ['cable', 'pipeline', 'joining']):
+    # 1. Müstakil derinlik, sığlık ve ölçüm cihazı listeleri: Kesinlikle POINT
+    # (Örn: Celtic Sea ölçüm cihazları, sahil boyunca derinlik sondajları)
+    is_discrete_list = any(k in txt_low for k in [
+        'scientific instruments', 'measuring instruments', 'instruments have been established',
+        'depths less than charted', 'drying heights', 'numerous depths', 'shoal'
+    ])
+    has_explicit_area = any(k in txt_low for k in [
+        'bounded by lines joining', 'within an area bounded', 'area bounded by',
+        'within the area bounded', 'enclosed by lines joining', 'within an area joining',
+        'in the area bounded'
+    ])
+    
+    if is_discrete_list and not has_explicit_area:
+        return 'POINT'
+
+    # 2. Hat/Çizgi Geometrisi: Kablo ve boru hatları (asla mesafeden dolayı noktaya çevrilmez)
+    is_line = any(k in txt_low for k in [
+        'cable', 'pipeline', 'along a line joining', 'line joining', 'track joining', 'route joining'
+    ])
+    if is_line and not has_explicit_area:
         return 'LINE'
-    if any(k in txt_low for k in ['area', 'bounded']):
-        return 'AREA' if c_count >= 3 else 'LINE'
+        
+    # 3. Alan/Poligon Geometrisi: Sadece açıkça geometrik sınır bildiren ifadelerde
+    if has_explicit_area and c_count >= 3:
+        return 'AREA'
+        
+    # 4. Açık sınır içermeyen şamandıra ve fener listeleri: POINT
+    if any(k in txt_low for k in ['buoy', 'light-buoy', 'light buoy', 'beacon', 'light unlit', 'fl.y', 'fl.g', 'fl.r']):
+        return 'POINT'
+        
+    if is_line:
+        return 'LINE'
         
     return 'POINT'
 
