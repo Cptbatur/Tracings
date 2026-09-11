@@ -1,0 +1,35 @@
+name: UKHO T&P Auto Scraper
+
+on:
+  schedule:
+    # Her Cuma gece 02:00 UTC'de otomatik çalışır
+    - cron: '0 2 * * 5'
+  workflow_dispatch: # İstendiğinde GitHub sitesindeki "Run" butonuyla elle de çalıştırılabilir
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodu Klonla
+        uses: actions/checkout@v4
+
+      - name: Python Kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Kütüphaneleri Yükle
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Scraper'ı Çalıştır
+        run: python scraper2.py
+
+      - name: Güncellenmiş JSON'u Repoya Kaydet
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add data/tp_notices.json pdf_cache/
+          git diff-index --quiet HEAD || git commit -m "Auto-update T&P data [skip ci]"
+          git push
