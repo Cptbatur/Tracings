@@ -12,7 +12,6 @@ JSON_PATH = os.path.join(DATA_DIR, "tp_notices.json")
 def normalize_text(txt):
     if not txt:
         return ""
-    # UKHO metin içi tırnak ve orta nokta temizliği
     txt = re.sub(r"[\'´`’]\s*[·•\.]", ".", txt)
     txt = txt.replace('´', "'").replace('`', "'").replace('’', "'")
     txt = txt.replace('·', '.').replace('•', '.')
@@ -31,11 +30,10 @@ def parse_coord(lat_deg, lat_min, lat_sec, lat_dir, lon_deg, lon_min, lon_sec, l
         pass
     return None
 
-def extract_coordinates(text):
-    clean = normalize_text(text)
+def extract_coordinates_from_text(text_block):
+    clean = normalize_text(text_block)
     coords = []
     
-    # Şamandıra kodları (BS1, BV1 vb.) ve tablo harflerini temizleyerek koordinat sökme
     pattern = re.compile(
         r'(\d{1,3})\s*°\s*(\d{1,2}(?:\.\d+)?)?\s*\'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*["”])?\s*([NS])\b[\s\.,]*'
         r'(\d{1,3})\s*°\s*(\d{1,2}(?:\.\d+)?)?\s*\'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*["”])?\s*([EW])\b',
@@ -50,18 +48,34 @@ def extract_coordinates(text):
             
     return coords
 
+def extract_coordinate_groups(full_text):
+    # Metni 1., 2., 3. veya (a), (b), (c) gibi maddelere bölme
+    sections = re.split(r'\n(?=(?:\d+\.|\([a-z]\))\s+)', full_text)
+    
+    groups = []
+    flat_coords = []
+    
+    for sec in sections:
+        sec_coords = extract_coordinates_from_text(sec)
+        if sec_coords:
+            groups.append(sec_coords)
+            flat_coords.extend(sec_coords)
+            
+    # Eğer maddeli bölünemediyse tüm metinden tek grup çıkar
+    if not groups:
+        all_c = extract_coordinates_from_text(full_text)
+        if all_c:
+            groups = [all_c]
+            flat_coords = all_c
+
+    return groups, flat_coords
+
 def detect_geometry_type(text, coord_count):
     txt_low = text.lower()
-    
-    # 1. KABLOLAR VE BORU HATTLARI KESİNLİKLE 'LINE'
     if any(k in txt_low for k in ['submarine cable', 'submarine cables', 'pipeline', 'joining the following', 'joining:']):
         return 'LINE' if coord_count >= 2 else 'POINT'
-        
-    # 2. YASAKLI SAHALAR, ATIŞ SAHALARI VE ÇALIŞMA ALANLARI 'AREA'
     if any(k in txt_low for k in ['area bounded', 'bounded by', 'within area', 'restricted area', 'work areas', 'firing practice area']):
         return 'AREA' if coord_count >= 3 else ('LINE' if coord_count == 2 else 'POINT')
-        
-    # 3. GENEL MANIK
     if coord_count >= 3:
         return 'AREA'
     elif coord_count == 2:
@@ -110,13 +124,13 @@ def process_pdfs():
                             continue
                         seen_ids.add(notice_id)
                         
-                        coords = extract_coordinates(clean_block)
-                        gtype = detect_geometry_type(clean_block, len(coords))
+                        coord_groups, flat_coords = extract_coordinate_groups(clean_block)
+                        gtype = detect_geometry_type(clean_block, len(flat_coords))
                         
                         region = subject.split('-')[0].strip() if '-' in subject else "UKHO"
                         
-                        c_lat = coords[0][0] if coords else None
-                        c_lon = coords[0][1] if coords else None
+                        c_lat = flat_coords[0][0] if flat_coords else None
+                        c_lon = flat_coords[0][1] if flat_coords else None
                         
                         notices.append({
                             "id": notice_id,
@@ -127,12 +141,12 @@ def process_pdfs():
                             "region": region,
                             "subject": subject,
                             "text": clean_block,
-                            "coordinate_groups": [coords] if coords else [],
-                            "coordinates": coords,
+                            "coordinate_groups": coord_groups,
+                            "coordinates": flat_coords,
                             "center_lat": c_lat,
                             "center_lon": c_lon,
                             "geometry_type": gtype,
-                            "has_coordinates": len(coords) > 0
+                            "has_coordinates": len(flat_coords) > 0
                         })
         except Exception as e:
             print(f"Hata ({filename}): {e}")
@@ -150,8 +164,8 @@ def process_pdfs():
     print(f"Toplam Gerçek T&P İlanı: {len(notices)}")
     with_coords = sum(1 for n in notices if n['has_coordinates'])
     text_only = len(notices) - with_coords
-    print(f"📍 Coğrafi / Haritada Çizilebilir İlanlar: {with_coords}")
-    print(f"📄 Bölgesel / Metinsel İlanlar: {text_only}\n")
+    print(f"📍 Coğrafi İlanlar: {with_coords}")
+    print(f"📄 Bölgesel İlanlar: {text_only}\n")
 
 if __name__ == "__main__":
     process_pdfs()
