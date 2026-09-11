@@ -4,7 +4,7 @@ on:
   schedule:
     # Her Cuma gece 02:00 UTC'de otomatik çalışır
     - cron: '0 2 * * 5'
-  workflow_dispatch: # İstendiğinde GitHub sitesindeki "Run" butonuyla elle de çalıştırılabilir
+  workflow_dispatch:
 
 jobs:
   scrape:
@@ -30,6 +30,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
-          git add data/tp_notices.json pdf_cache/
+          git add data/tp_notices.json pdf_cache/ 2>/dev/null || true
           git diff-index --quiet HEAD || git commit -m "Auto-update T&P data [skip ci]"
           git push
