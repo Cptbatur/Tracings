@@ -7,14 +7,13 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0a0f1a;--card:#131d2a;--card2:#1a2840;--card3:#0f1926;
   --accent:#4D6F8A;--accent-l:#6990a8;--accent-d:#3a5569;
-  --text:#e8edf2;--dim:#7a8fa8;--dim2:#4a6070;
+  --text:#e8edf2;--dim:#7a8fa8;
   --red:#e53e3e;--yellow:#d69e2e;--green:#38a169;
   --red-bg:rgba(229,62,62,.14);--yellow-bg:rgba(214,158,46,.14);
   --red-l:#fc8181;--yellow-l:#f6e05e;
@@ -22,287 +21,106 @@
   --nav-h:64px;--hdr-h:56px;
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
-  font-size:16px;line-height:1.5}
-#app{display:flex;flex-direction:column;height:100%;max-height:100vh}
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px}
+#app{display:flex;flex-direction:column;height:100vh}
 
 #hdr{height:var(--hdr-h);background:var(--card);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 14px;flex-shrink:0;gap:10px}
-#hdr-logo{width:34px;height:34px;background:var(--accent);border-radius:9px;
-  display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
-#hdr-title{font-size:17px;font-weight:700;letter-spacing:.3px}
-#hdr-sub{font-size:10px;color:var(--dim);letter-spacing:.2px}
-#hdr-stat{margin-left:auto;text-align:right;flex-shrink:0}
-#stat-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--dim);margin-right:4px;vertical-align:middle}
-#stat-txt{font-size:11px;color:var(--dim)}
+  display:flex;align-items:center;padding:0 14px;gap:10px}
+#hdr-title{font-size:16px;font-weight:700}
+#hdr-stat{margin-left:auto;font-size:12px;color:var(--dim)}
 
 #tab-wrap{flex:1;overflow:hidden;position:relative}
-.tab{display:none;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tab{display:none;height:100%;overflow-y:auto;padding:14px}
 .tab.active{display:block}
-#tab-map{overflow:hidden}
-#tab-report{display:none;flex-direction:column}
-#tab-report.active{display:flex}
+#tab-map{padding:0}
 
 #bnav{height:var(--nav-h);background:var(--card);border-top:1px solid var(--border);
-  display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
-.nbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;background:none;border:none;color:var(--dim);cursor:pointer;
-  padding:8px 0;min-height:48px;font-size:11px;font-weight:600;letter-spacing:.4px;
-  transition:color .15s}
+  display:flex}
+.nbtn{flex:1;background:none;border:none;color:var(--dim);font-weight:600;font-size:12px;cursor:pointer}
 .nbtn.active{color:var(--accent-l)}
-.nbtn svg{width:22px;height:22px}
 
-.card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:15px}
-.ctitle{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;
-  letter-spacing:1.1px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.ctitle{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;margin-bottom:10px}
 
-#tab-import{padding:14px;gap:14px;flex-direction:column}
-#tab-import.active{display:flex}
-
-#drop-zone{border:2px dashed var(--border);border-radius:11px;padding:28px 16px;
-  text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;
-  min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
-#drop-zone:hover,#drop-zone.over{border-color:var(--accent);background:rgba(77,111,138,.07)}
-#drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-#up-icon{font-size:34px}
-#up-title{font-size:16px;font-weight:600;color:var(--text)}
-#up-sub{font-size:13px;color:var(--dim)}
-
-#route-sum{display:none;background:var(--card3);border-radius:9px;padding:11px;
-  margin-top:11px;border:1px solid var(--border)}
-#route-sum.show{display:block}
-.srow{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:13px}
-.slbl{color:var(--dim)}.sval{font-weight:600;color:var(--text)}
+#drop-zone{border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;position:relative}
+#drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 
 .setrow{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
-.setlbl{font-size:15px;color:var(--text)}.setdsc{font-size:11px;color:var(--dim);margin-top:1px}
-.setinp{display:flex;align-items:center;gap:7px}
-.setinp input{background:var(--card3);border:1px solid var(--border);border-radius:8px;
-  color:var(--text);font-size:16px;padding:8px 10px;width:86px;text-align:right;outline:none;
-  transition:border-color .2s;-webkit-appearance:none}
-.setinp input:focus{border-color:var(--accent)}
-.unit{font-size:12px;color:var(--dim);min-width:18px}
+.setinp input{background:var(--card3);border:1px solid var(--border);color:#fff;padding:6px;width:70px;text-align:right;border-radius:6px}
 
-.dbrow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
-.dblbl{color:var(--dim)}
+#analyze-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer}
+#analyze-btn:disabled{opacity:.4}
 
-#analyze-btn{width:100%;padding:16px;background:var(--accent);color:#fff;border:none;
-  border-radius:13px;font-size:17px;font-weight:700;letter-spacing:.5px;cursor:pointer;
-  transition:opacity .2s,background .2s;min-height:54px;-webkit-appearance:none}
-#analyze-btn:active{background:var(--accent-d)}
-#analyze-btn:disabled{opacity:.35;cursor:not-allowed}
-
-#loader{display:none;position:fixed;inset:0;background:rgba(10,15,26,.88);z-index:2000;
-  align-items:center;justify-content:center;flex-direction:column;gap:15px}
-#loader.on{display:flex}
-.spin{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--accent);
-  border-radius:50%;animation:sp .7s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-#loader-txt{color:var(--dim);font-size:14px;text-align:center;max-width:240px}
-
-#toast{display:none;position:fixed;top:calc(var(--hdr-h)+10px);left:12px;right:12px;
-  background:var(--card2);border:1px solid var(--border);border-radius:11px;
-  padding:12px 16px;font-size:14px;z-index:1900;animation:tin .2s ease}
-#toast.err{border-color:var(--red);color:var(--red-l)}
-#toast.ok{border-color:var(--green);color:var(--green-l)}
-#toast.warn{border-color:var(--yellow);color:var(--yellow-l)}
-@keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-
-#map-wrap{height:100%;position:relative}
+#map-wrap{height:100%}
 #lmap{height:100%;background:#0d1420}
-.leaflet-container{background:#0d1420!important}
-.leaflet-popup-content-wrapper{background:var(--card);border:1px solid var(--border);
-  border-radius:11px;color:var(--text);box-shadow:0 4px 22px rgba(0,0,0,.55)}
-.leaflet-popup-tip{background:var(--card)}
-.leaflet-popup-content{margin:12px 14px;font-size:13px;line-height:1.5}
-.leaflet-control-zoom a{background:var(--card)!important;color:var(--text)!important;
-  border-color:var(--border)!important}
-.pp-id{font-size:11px;font-weight:700;color:var(--accent-l);letter-spacing:.4px;margin-bottom:3px}
-.pp-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;
-  font-weight:700;margin-bottom:5px}
-.pp-badge.red{background:var(--red-bg);color:var(--red-l)}
-.pp-badge.yellow{background:var(--yellow-bg);color:var(--yellow-l)}
-.pp-title{font-weight:600;font-size:14px;margin-bottom:5px;line-height:1.35}
-.pp-dist{font-size:12px;color:var(--dim);margin-bottom:7px}
-.pp-type{font-size:11px;color:var(--dim2);margin-bottom:7px}
-.pp-txt{font-size:12px;color:var(--dim);line-height:1.5;max-height:110px;overflow-y:auto;
-  border-top:1px solid var(--border);padding-top:7px}
-#map-badge{position:absolute;top:11px;left:11px;z-index:500;
-  background:rgba(13,20,32,.88);border:1px solid var(--border);border-radius:8px;
-  padding:7px 12px;font-size:12px;color:var(--dim);display:none;backdrop-filter:blur(4px)}
-#map-badge.on{display:block}
 
-#rpt-hdr{padding:11px 14px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
-#rpt-pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px}
-.pill{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;
-  font-size:12px;font-weight:700}
-.pill-r{background:var(--red-bg);color:var(--red-l)}
-.pill-y{background:var(--yellow-bg);color:var(--yellow-l)}
-#rpt-actions{display:flex;gap:8px;align-items:center}
-#rpt-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 0}
-.ritem{display:flex;align-items:flex-start;gap:11px;padding:12px 14px;
-  border-bottom:1px solid rgba(77,111,138,.08);cursor:pointer;transition:background .12s}
-.ritem:active{background:var(--card)}
-.rdot{width:13px;height:13px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.ritem{display:flex;align-items:center;padding:10px;border-bottom:1px solid var(--border);gap:10px}
+.rdot{width:10px;height:10px;border-radius:50%}
 .rdot-r{background:var(--red)}.rdot-y{background:var(--yellow)}
-.rbody{flex:1;min-width:0}
-.rid{font-size:11px;color:var(--accent-l);font-weight:700;letter-spacing:.2px}
-.rtitle{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;margin:2px 0}
-.rmeta{font-size:11px;color:var(--dim);display:flex;gap:10px;flex-wrap:wrap}
-.rdist{margin-left:auto;text-align:right;flex-shrink:0}
-.rdval{font-size:15px;font-weight:700}
-.rdunit{font-size:10px;color:var(--dim)}
-.rdval.r{color:var(--red-l)}.rdval.y{color:var(--yellow-l)}
-.empty-msg{text-align:center;padding:52px 20px;color:var(--dim)}
-.empty-icon{font-size:44px;margin-bottom:10px}
-.empty-title{font-size:17px;font-weight:600;color:var(--text);margin-bottom:6px}
-.empty-desc{font-size:14px;line-height:1.6}
-
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.leaflet-control-attribution{font-size:9px!important;opacity:.6}
+.rbody{flex:1}
+.rid{font-size:12px;font-weight:700;color:var(--accent-l)}
+.rtitle{font-size:13px;color:#fff}
+.rdist{font-size:14px;font-weight:700}
+.rdist.r{color:var(--red-l)}.rdist.y{color:var(--yellow-l)}
 </style>
 </head>
 <body>
 <div id="app">
 
   <div id="hdr">
-    <div id="hdr-logo">⚓</div>
-    <div>
-      <div id="hdr-title">Tracings</div>
-      <div id="hdr-sub">UKHO T&amp;P Route Checker</div>
-    </div>
-    <div id="hdr-stat">
-      <span id="stat-dot"></span><span id="stat-txt">Connecting…</span>
-    </div>
+    <div id="hdr-title">⚓ Tracings</div>
+    <div id="hdr-stat" id="stat-txt">Connecting…</div>
   </div>
 
   <div id="tab-wrap">
-
     <div id="tab-import" class="tab active">
       <div class="card">
-        <div class="ctitle">Route File</div>
+        <div class="ctitle">1. Select Route File</div>
         <div id="drop-zone">
-          <input type="file" id="file-inp" accept=".rtz,.rtzp,.gpx,.csv,.kml">
-          <div id="up-icon">📂</div>
-          <div id="up-title">Tap to Upload Route</div>
-          <div id="up-sub">RTZ · RTZP · GPX · CSV · KML</div>
-        </div>
-        <div id="route-sum">
-          <div class="srow"><span class="slbl">File</span><span class="sval" id="s-file">—</span></div>
-          <div class="srow"><span class="slbl">Route Name</span><span class="sval" id="s-name">—</span></div>
-          <div class="srow"><span class="slbl">Waypoints</span><span class="sval" id="s-wp">—</span></div>
-          <div class="srow"><span class="slbl">Legs</span><span class="sval" id="s-leg">—</span></div>
-          <div class="srow"><span class="slbl">XTD Source</span><span class="sval" id="s-xtd">—</span></div>
+          <input type="file" id="file-inp" accept=".rtz,.gpx">
+          <div>📁 Tap or Drop RTZ / GPX Route</div>
         </div>
       </div>
 
       <div class="card">
-        <div class="ctitle">Safety Settings</div>
+        <div class="ctitle">2. Safety Parameters</div>
         <div class="setrow">
-          <div><div class="setlbl">Company Safety Distance</div>
-            <div class="setdsc">Yellow threshold — notices within this range</div></div>
-          <div class="setinp">
-            <input type="number" id="inp-safety" value="15" min="1" max="300" step="1">
-            <span class="unit">NM</span>
-          </div>
+          <span>Company Safety Distance (NM)</span>
+          <div class="setinp"><input type="number" id="inp-safety" value="15"></div>
         </div>
         <div class="setrow">
-          <div><div class="setlbl">Default XTD</div>
-            <div class="setdsc">Used when route file has no XTD value</div></div>
-          <div class="setinp">
-            <input type="number" id="inp-xtd" value="0.1" min="0.01" max="20" step="0.05">
-            <span class="unit">NM</span>
-          </div>
+          <span>XTD Corridor (NM)</span>
+          <div class="setinp"><input type="number" id="inp-xtd" value="0.5"></div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="ctitle">T&amp;P Database</div>
-        <div>
-          <div class="dbrow"><span class="dblbl">Status</span><span id="db-stat">Connecting…</span></div>
-          <div class="dbrow"><span class="dblbl">Total Notices</span><span id="db-cnt">—</span></div>
-          <div class="dbrow"><span class="dblbl">Last Updated</span><span id="db-upd">—</span></div>
-          <div class="dbrow"><span class="dblbl">Source</span><span id="db-cache">Local JSON</span></div>
-        </div>
-      </div>
-
-      <button id="analyze-btn" disabled onclick="runAnalysis()">⚓&nbsp; ANALYZE ROUTE</button>
+      <button id="analyze-btn" disabled onclick="runAnalysis()">⚓ ANALYZE ROUTE</button>
     </div>
 
     <div id="tab-map" class="tab">
-      <div id="map-wrap">
-        <div id="lmap"></div>
-        <div id="map-badge"></div>
-      </div>
+      <div id="map-wrap"><div id="lmap"></div></div>
     </div>
 
     <div id="tab-report" class="tab">
-      <div id="rpt-hdr">
-        <div id="rpt-pills">
-          <div class="pill pill-r">● <span id="cnt-r">0</span> Critical</div>
-          <div class="pill pill-y">● <span id="cnt-y">0</span> Caution</div>
-        </div>
+      <div class="card">
+        <div class="ctitle">Analysis Summary</div>
+        <div id="summary-txt">No route analyzed yet.</div>
       </div>
-      <div id="rpt-list">
-        <div class="empty-msg">
-          <div class="empty-icon">📋</div>
-          <div class="empty-title">No Analysis Yet</div>
-          <div class="empty-desc">Upload a route file in Import tab, then tap Analyze.</div>
-        </div>
-      </div>
+      <div id="rpt-list"></div>
     </div>
-
   </div>
 
   <nav id="bnav">
-    <button class="nbtn active" id="n-import" onclick="switchTab('import')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>IMPORT
-    </button>
-    <button class="nbtn" id="n-map" onclick="switchTab('map')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-        <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
-      </svg>MAP
-    </button>
-    <button class="nbtn" id="n-report" onclick="switchTab('report')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-      </svg>REPORT
-    </button>
+    <button class="nbtn active" id="n-import" onclick="switchTab('import')">IMPORT</button>
+    <button class="nbtn" id="n-map" onclick="switchTab('map')">MAP</button>
+    <button class="nbtn" id="n-report" onclick="switchTab('report')">REPORT</button>
   </nav>
 </div>
-
-<div id="loader">
-  <div class="spin"></div>
-  <div id="loader-txt">Loading…</div>
-</div>
-
-<div id="toast"></div>
 
 <script>
 'use strict';
 
-const S = {
-  waypoints: [],
-  tpRaw: [],
-  results: [],
-  safetyDist: 15,
-  defXTD: 0.1,
-  map: null,
-  mapReady: false,
-  markerMap: {},
-  routeLayer: null,
-  wpMarkers: [],
-  drawnLayersGroup: null
-};
-
+const S = { waypoints: [], tpRaw: [], results: [], map: null, mapReady: false, drawnGroup: null };
 const DATA_URL = './data/tp_notices.json';
 
 function switchTab(t) {
@@ -312,224 +130,124 @@ function switchTab(t) {
   document.getElementById('n-' + t).classList.add('active');
   if (t === 'map') {
     if (!S.mapReady) initMap();
-    else setTimeout(() => S.map && S.map.invalidateSize(), 80);
+    else setTimeout(() => S.map && S.map.invalidateSize(), 100);
   }
-}
-
-function setLoading(on, txt) {
-  document.getElementById('loader').classList.toggle('on', on);
-  if (txt) document.getElementById('loader-txt').textContent = txt;
-}
-
-let _toastTimer;
-function toast(msg, type = '', ms = 3500) {
-  const el = document.getElementById('toast');
-  el.className = type;
-  el.textContent = msg;
-  el.style.display = 'block';
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => { el.style.display = 'none'; }, ms);
 }
 
 async function fetchStatusAndData() {
   try {
     const r = await fetch(DATA_URL);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
     S.tpRaw = d.notices || [];
-    
-    document.getElementById('db-stat').innerHTML = '<span style="color:var(--green-l)">✅ Loaded</span>';
-    document.getElementById('db-cnt').textContent = S.tpRaw.length;
-    document.getElementById('db-upd').textContent = d.last_updated
-      ? new Date(d.last_updated).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})
-      : 'Just now';
-    document.getElementById('stat-dot').style.background = 'var(--green)';
-    document.getElementById('stat-txt').textContent = S.tpRaw.length + ' notices';
+    document.getElementById('hdr-stat').textContent = S.tpRaw.length + ' notices ready';
   } catch (e) {
-    document.getElementById('db-stat').innerHTML = '<span style="color:var(--yellow-l)">⚠️ Error</span>';
-    document.getElementById('stat-dot').style.background = 'var(--yellow)';
-    document.getElementById('stat-txt').textContent = 'JSON Offline';
+    document.getElementById('hdr-stat').textContent = 'JSON Error';
   }
 }
 
-function parseXML(txt) {
-  txt = txt.replace(/ xmlns(?::\w+)?="[^"]*"/g, '');
-  return new DOMParser().parseFromString(txt, 'application/xml');
-}
-
 function parseRTZ(txt) {
-  const doc = parseXML(txt);
-  if (doc.querySelector('parsererror')) throw new Error('Invalid XML in RTZ');
-  let routeName = doc.querySelector('routeInfo')?.getAttribute('routeName') || '';
+  const doc = new DOMParser().parseFromString(txt.replace(/ xmlns(?::\w+)?="[^"]*"/g, ''), 'application/xml');
   const wps = [];
   doc.querySelectorAll('waypoint').forEach(w => {
     const pos = w.querySelector('position');
     const lat = parseFloat(pos ? pos.getAttribute('lat') : w.getAttribute('lat'));
     const lon = parseFloat(pos ? pos.getAttribute('lon') : w.getAttribute('lon'));
-    if (isNaN(lat) || isNaN(lon)) return;
-    const name = w.getAttribute('name') || ('WP' + (wps.length + 1));
-    wps.push({ lat, lon, name, xtd: S.defXTD });
+    if (!isNaN(lat) && !isNaN(lon)) wps.push({ lat, lon });
   });
-  return { wps, routeName, xtdSrc: 'Default ' + S.defXTD + ' NM' };
+  return wps;
 }
 
-async function parseRTZP(buf) {
-  const zip = await JSZip.loadAsync(buf);
-  for (const [fn, f] of Object.entries(zip.files)) {
-    if (fn.toLowerCase().endsWith('.rtz')) return parseRTZ(await f.async('string'));
-  }
-  throw new Error('No .rtz found inside .rtzp');
-}
-
-function parseGPX(txt) {
-  const doc = parseXML(txt);
-  const wps = [];
-  doc.querySelectorAll('rtept, trkpt').forEach(p => {
-    const lat = parseFloat(p.getAttribute('lat'));
-    const lon = parseFloat(p.getAttribute('lon'));
-    if (!isNaN(lat) && !isNaN(lon)) wps.push({ lat, lon, name: 'WP' + (wps.length + 1), xtd: S.defXTD });
-  });
-  return { wps, routeName: 'GPX Route', xtdSrc: 'Default ' + S.defXTD + ' NM' };
-}
-
-async function handleFile(file) {
+document.getElementById('file-inp').addEventListener('change', async e => {
+  const file = e.target.files[0];
   if (!file) return;
-  S.defXTD = parseFloat(document.getElementById('inp-xtd').value) || 0.1;
-  const ext = file.name.split('.').pop().toLowerCase();
-  setLoading(true, 'Parsing ' + ext.toUpperCase() + ' file…');
-  try {
-    let res;
-    if (ext === 'rtzp') res = await parseRTZP(await file.arrayBuffer());
-    else {
-      const txt = await file.text();
-      if (ext === 'rtz') res = parseRTZ(txt);
-      else if (ext === 'gpx') res = parseGPX(txt);
-      else throw new Error('Unsupported format');
-    }
-    if (!res.wps || res.wps.length < 2) throw new Error('Need at least 2 waypoints');
-
-    S.waypoints = res.wps;
-    document.getElementById('route-sum').classList.add('show');
-    document.getElementById('s-file').textContent = file.name;
-    document.getElementById('s-name').textContent = res.routeName || '—';
-    document.getElementById('s-wp').textContent = res.wps.length;
-    document.getElementById('s-leg').textContent = res.wps.length - 1;
-    document.getElementById('s-xtd').textContent = res.xtdSrc;
+  const txt = await file.text();
+  S.waypoints = parseRTZ(txt);
+  if (S.waypoints.length >= 2) {
     document.getElementById('analyze-btn').disabled = false;
-    toast('Route loaded — ' + res.wps.length + ' waypoints', 'ok');
-  } catch (e) {
-    toast('Parse error: ' + e.message, 'err');
-  } finally {
-    setLoading(false);
+    alert('Route loaded successfully: ' + S.waypoints.length + ' Waypoints');
+  } else {
+    alert('Failed to parse RTZ route');
   }
-}
+});
 
-// GEOMETRY & DISTANCE ENGINE
 const R_NM = 3440.065;
 function toR(d) { return d * Math.PI / 180; }
-
 function hvNM(la1, lo1, la2, lo2) {
   const dLa = toR(la2 - la1), dLo = toR(lo2 - lo1);
   const a = Math.sin(dLa/2)**2 + Math.cos(toR(la1))*Math.cos(toR(la2))*Math.sin(dLo/2)**2;
   return 2 * R_NM * Math.asin(Math.sqrt(Math.min(1, a)));
 }
 
-function noticeMinDistToRoute(notice, wps) {
-  const allCoords = notice.coordinates || [];
-  if (!allCoords.length) return Infinity;
-
+function getNoticeDistance(notice, wps) {
+  const coords = notice.coordinates || [];
+  if (!coords.length) return Infinity;
   let minD = Infinity;
-  for (const [la, lo] of allCoords) {
-    for (let j = 0; j < wps.length; j++) {
-      const d = hvNM(la, lo, wps[j].lat, wps[j].lon);
+  for (const [la, lo] of coords) {
+    for (const wp of wps) {
+      const d = hvNM(la, lo, wp.lat, wp.lon);
       if (d < minD) minD = d;
     }
   }
   return minD;
 }
 
-async function runAnalysis() {
-  if (S.waypoints.length < 2) return;
-  S.safetyDist = parseFloat(document.getElementById('inp-safety').value) || 15;
-  S.defXTD = parseFloat(document.getElementById('inp-xtd').value) || 0.1;
-  
-  setLoading(true, 'Analyzing route against T&P database…');
-  try {
-    if (!S.tpRaw.length) await fetchStatusAndData();
-    
-    const results = [];
-    for (const notice of S.tpRaw) {
-      if (!notice.has_coordinates) continue;
+function runAnalysis() {
+  const safetyDist = parseFloat(document.getElementById('inp-safety').value) || 15;
+  const xtd = parseFloat(document.getElementById('inp-xtd').value) || 0.5;
 
-      const dist = noticeMinDistToRoute(notice, S.waypoints);
-      if (dist <= S.safetyDist) {
-        const color = dist <= S.defXTD ? 'red' : 'yellow';
-        results.push({ notice, color, distance: Math.round(dist * 10) / 10 });
-      }
+  const results = [];
+  for (const notice of S.tpRaw) {
+    if (!notice.has_coordinates) continue;
+    const dist = getNoticeDistance(notice, S.waypoints);
+    if (dist <= safetyDist) {
+      const color = dist <= xtd ? 'red' : 'yellow';
+      results.push({ notice, color, distance: Math.round(dist * 10) / 10 });
     }
-
-    results.sort((a,b) => a.distance - b.distance);
-    S.results = results;
-
-    if (!S.mapReady) initMap();
-    renderRoute();
-    renderMarkers();
-    renderReport();
-    switchTab('map');
-
-    toast(`Analysis complete: ${results.length} notices near route`, 'ok');
-  } catch (e) {
-    toast('Analysis failed: ' + e.message, 'err');
-  } finally {
-    setLoading(false);
   }
+
+  results.sort((a,b) => a.distance - b.distance);
+  S.results = results;
+
+  if (!S.mapReady) initMap();
+  renderRoute();
+  renderMarkers();
+  renderReport();
+  switchTab('map');
 }
 
-// MAP RENDERER
 function initMap() {
   const map = L.map('lmap', { center:[35, 15], zoom:3 });
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
-  L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { opacity:0.8 }).addTo(map);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
   S.map = map;
   S.mapReady = true;
-  S.drawnLayersGroup = L.layerGroup().addTo(map);
+  S.drawnGroup = L.layerGroup().addTo(map);
 }
 
 function renderRoute() {
   if (S.routeLayer) S.map.removeLayer(S.routeLayer);
   const ll = S.waypoints.map(w => [w.lat, w.lon]);
-  S.routeLayer = L.polyline(ll, { color:'#e8edf2', weight:3.5 }).addTo(S.map);
-  S.map.fitBounds(S.routeLayer.getBounds(), { padding:[60,60] });
-}
-
-function drawNoticeShape(notice, color) {
-  const gtype = notice.geometry_type || 'POINT';
-  const cGroups = notice.coordinate_groups || (notice.coordinates ? [notice.coordinates] : []);
-  const hex = color === 'red' ? '#e53e3e' : '#d69e2e';
-
-  if (!cGroups.length) return;
-
-  for (const cg of cGroups) {
-    if (!cg.length) continue;
-    const ll = cg.map(([la,lo]) => [la,lo]);
-
-    if (gtype === 'LINE' && cg.length >= 2) {
-      L.polyline(ll, { color:hex, weight:3, dashArray:'6,4' }).addTo(S.drawnLayersGroup);
-    } else if (gtype === 'AREA' && cg.length >= 3) {
-      L.polygon(ll, { color:hex, weight:2, fillColor:hex, fillOpacity:0.25 }).addTo(S.drawnLayersGroup);
-    } else {
-      cg.forEach(pt => {
-        L.circleMarker(pt, { radius:5, fillColor:hex, color:'#fff', weight:1, fillOpacity:0.85 }).addTo(S.drawnLayersGroup);
-      });
-    }
-  }
+  S.routeLayer = L.polyline(ll, { color:'#4D6F8A', weight:4 }).addTo(S.map);
+  S.map.fitBounds(S.routeLayer.getBounds(), { padding:[40,40] });
 }
 
 function renderMarkers() {
-  if (S.drawnLayersGroup) S.drawnLayersGroup.clearLayers();
+  if (S.drawnGroup) S.drawnGroup.clearLayers();
 
   for (const r of S.results) {
-    drawNoticeShape(r.notice, r.color);
+    const coords = r.notice.coordinates || [];
+    const hex = r.color === 'red' ? '#e53e3e' : '#d69e2e';
+
+    if (r.notice.geometry_type === 'LINE' && coords.length >= 2) {
+      L.polyline(coords, { color:hex, weight:3 }).addTo(S.drawnGroup);
+    } else if (r.notice.geometry_type === 'AREA' && coords.length >= 3) {
+      L.polygon(coords, { color:hex, weight:2, fillColor:hex, fillOpacity:0.3 }).addTo(S.drawnGroup);
+    } else {
+      coords.forEach(pt => {
+        L.circleMarker(pt, { radius:6, fillColor:hex, color:'#fff', weight:1, fillOpacity:0.9 })
+         .bindPopup(`<b>${r.notice.id}</b><br>${r.notice.title}`)
+         .addTo(S.drawnGroup);
+      });
+    }
   }
 }
 
@@ -537,30 +255,22 @@ function renderReport() {
   const list = document.getElementById('rpt-list');
   const rc = S.results.filter(r => r.color === 'red').length;
   const yc = S.results.filter(r => r.color === 'yellow').length;
-  
-  document.getElementById('cnt-r').textContent = rc;
-  document.getElementById('cnt-y').textContent = yc;
 
-  if (!S.results.length) {
-    list.innerHTML = '<div class="empty-msg"><div class="empty-title">Route Clear</div><div>No T&P notices near route.</div></div>';
-    return;
-  }
+  document.getElementById('summary-txt').textContent = `Found ${rc} Critical (Red) and ${yc} Caution (Yellow) notices near your route.`;
 
   list.innerHTML = S.results.map(r => `
     <div class="ritem">
       <div class="rdot rdot-${r.color === 'red' ? 'r' : 'y'}"></div>
       <div class="rbody">
-        <div class="rid">${r.notice.id || r.notice.number}</div>
-        <div class="rtitle">${r.notice.title || r.notice.subject || '—'}</div>
+        <div class="rid">${r.notice.id}</div>
+        <div class="rtitle">${r.notice.title}</div>
       </div>
-      <div class="rdist"><div class="rdval ${r.color === 'red' ? 'r' : 'y'}">${r.distance}</div><div class="rdunit">NM</div></div>
+      <div class="rdist ${r.color === 'red' ? 'r' : 'y'}">${r.distance} NM</div>
     </div>
   `).join('');
 }
 
-document.getElementById('file-inp').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 fetchStatusAndData();
-switchTab('import');
 </script>
 </body>
 </html>

@@ -18,68 +18,56 @@ def normalize_text(txt):
     txt = txt.replace('”', '"').replace('“', '"')
     return txt
 
-def parse_coord(lat_deg, lat_min, lat_sec, lat_dir, lon_deg, lon_min, lon_sec, lon_dir):
+def parse_coord(lat_d, lat_m, lat_s, lat_dir, lon_d, lon_m, lon_s, lon_dir):
     try:
-        la = float(lat_deg) + (float(lat_min if lat_min else 0) / 60.0) + (float(lat_sec if lat_sec else 0) / 3600.0)
-        lo = float(lon_deg) + (float(lon_min if lon_min else 0) / 60.0) + (float(lon_sec if lon_sec else 0) / 3600.0)
+        la = float(lat_d) + (float(lat_m if lat_m else 0) / 60.0) + (float(lat_s if lat_s else 0) / 3600.0)
+        lo = float(lon_d) + (float(lon_m if lon_m else 0) / 60.0) + (float(lon_s if lon_s else 0) / 3600.0)
         if lat_dir.upper() == 'S': la = -la
         if lon_dir.upper() == 'W': lo = -lo
+        
         if -90 <= la <= 90 and -180 <= lo <= 180:
             return [round(la, 6), round(lo, 6)]
     except Exception:
         pass
     return None
 
-def extract_coordinates_from_text(text_block):
-    clean = normalize_text(text_block)
+def extract_coordinates(text):
+    clean = normalize_text(text)
     coords = []
     
+    # Doğrudan UKHO Standart Enlem / Boylam Deseni
     pattern = re.compile(
-        r'(\d{1,3})\s*°\s*(\d{1,2}(?:\.\d+)?)?\s*\'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*["”])?\s*([NS])\b[\s\.,]*'
+        r'(\d{1,2})\s*°\s*(\d{1,2}(?:\.\d+)?)?\s*\'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*["”])?\s*([NS])\b[\s\.,]*'
         r'(\d{1,3})\s*°\s*(\d{1,2}(?:\.\d+)?)?\s*\'?\s*(?:(\d{1,2}(?:\.\d+)?)\s*["”])?\s*([EW])\b',
         re.IGNORECASE
     )
     
     for m in pattern.findall(clean):
-        if m[0] and m[3] and m[4] and m[7]:
-            c = parse_coord(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7])
-            if c and c not in coords:
-                coords.append(c)
+        c = parse_coord(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7])
+        if c and c not in coords:
+            coords.append(c)
             
     return coords
 
-def extract_coordinate_groups(full_text):
-    # Metni 1., 2., 3. veya (a), (b), (c) gibi maddelere bölme
-    sections = re.split(r'\n(?=(?:\d+\.|\([a-z]\))\s+)', full_text)
-    
-    groups = []
-    flat_coords = []
-    
-    for sec in sections:
-        sec_coords = extract_coordinates_from_text(sec)
-        if sec_coords:
-            groups.append(sec_coords)
-            flat_coords.extend(sec_coords)
-            
-    # Eğer maddeli bölünemediyse tüm metinden tek grup çıkar
-    if not groups:
-        all_c = extract_coordinates_from_text(full_text)
-        if all_c:
-            groups = [all_c]
-            flat_coords = all_c
-
-    return groups, flat_coords
-
-def detect_geometry_type(text, coord_count):
+def detect_geometry_type(text, coords):
+    c_count = len(coords)
+    if c_count < 2:
+        return 'POINT'
+        
     txt_low = text.lower()
-    if any(k in txt_low for k in ['submarine cable', 'submarine cables', 'pipeline', 'joining the following', 'joining:']):
-        return 'LINE' if coord_count >= 2 else 'POINT'
-    if any(k in txt_low for k in ['area bounded', 'bounded by', 'within area', 'restricted area', 'work areas', 'firing practice area']):
-        return 'AREA' if coord_count >= 3 else ('LINE' if coord_count == 2 else 'POINT')
-    if coord_count >= 3:
-        return 'AREA'
-    elif coord_count == 2:
+    
+    # Noktalar arası mesafe çok büyükse bozuk poligon oluşturmayı önle
+    if c_count >= 3:
+        la1, lo1 = coords[0]
+        la2, lo2 = coords[-1]
+        if abs(la1 - la2) > 1.5 or abs(lo1 - lo2) > 2.0:
+            return 'POINT'
+            
+    if any(k in txt_low for k in ['cable', 'pipeline', 'joining']):
         return 'LINE'
+    if any(k in txt_low for k in ['area', 'bounded']):
+        return 'AREA' if c_count >= 3 else 'LINE'
+        
     return 'POINT'
 
 def process_pdfs():
@@ -89,10 +77,9 @@ def process_pdfs():
     notices = []
     seen_ids = set()
 
-    print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] {len(pdf_files)} PDF dosyası taranıyor...")
+    print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] PDF dosyaları taranıyor...")
 
     for pdf_path in pdf_files:
-        filename = os.path.basename(pdf_path)
         try:
             with pdfplumber.open(pdf_path) as pdf:
                 for page in pdf.pages:
@@ -107,6 +94,7 @@ def process_pdfs():
                         if "(T)/" not in clean_block and "(P)/" not in clean_block:
                             continue
 
+                        # Sadece sayfa indekslerini ele
                         if len(clean_block) < 35 and re.search(r'\d+\.\d+$', clean_block):
                             continue
                             
@@ -124,13 +112,11 @@ def process_pdfs():
                             continue
                         seen_ids.add(notice_id)
                         
-                        coord_groups, flat_coords = extract_coordinate_groups(clean_block)
-                        gtype = detect_geometry_type(clean_block, len(flat_coords))
+                        coords = extract_coordinates(clean_block)
+                        gtype = detect_geometry_type(clean_block, coords)
                         
-                        region = subject.split('-')[0].strip() if '-' in subject else "UKHO"
-                        
-                        c_lat = flat_coords[0][0] if flat_coords else None
-                        c_lon = flat_coords[0][1] if flat_coords else None
+                        c_lat = coords[0][0] if coords else None
+                        c_lon = coords[0][1] if coords else None
                         
                         notices.append({
                             "id": notice_id,
@@ -138,18 +124,17 @@ def process_pdfs():
                             "type": ntype,
                             "year": int(yr) if len(yr)==4 else int("20"+yr),
                             "title": subject or "T&P Notice",
-                            "region": region,
+                            "region": subject.split('-')[0].strip() if '-' in subject else "UKHO",
                             "subject": subject,
                             "text": clean_block,
-                            "coordinate_groups": coord_groups,
-                            "coordinates": flat_coords,
+                            "coordinates": coords,
                             "center_lat": c_lat,
                             "center_lon": c_lon,
                             "geometry_type": gtype,
-                            "has_coordinates": len(flat_coords) > 0
+                            "has_coordinates": len(coords) > 0
                         })
-        except Exception as e:
-            print(f"Hata ({filename}): {e}")
+        except Exception:
+            pass
 
     result = {
         "last_updated": datetime.now(timezone.utc).isoformat(),
@@ -161,11 +146,9 @@ def process_pdfs():
         json.dump(result, f, ensure_ascii=False, indent=2)
 
     print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] İŞLEM TAMAMLANDI!")
-    print(f"Toplam Gerçek T&P İlanı: {len(notices)}")
-    with_coords = sum(1 for n in notices if n['has_coordinates'])
-    text_only = len(notices) - with_coords
-    print(f"📍 Coğrafi İlanlar: {with_coords}")
-    print(f"📄 Bölgesel İlanlar: {text_only}\n")
+    print(f"Toplam T&P İlanı: {len(notices)}")
+    with_c = sum(1 for n in notices if n['has_coordinates'])
+    print(f"Haritada Gösterilebilecek İlanlar: {with_c}")
 
 if __name__ == "__main__":
     process_pdfs()
