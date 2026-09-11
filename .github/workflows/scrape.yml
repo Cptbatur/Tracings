@@ -2,7 +2,6 @@ name: UKHO T&P Auto Scraper
 
 on:
   schedule:
-    # Her Cuma gece 02:00 UTC'de otomatik çalışır
     - cron: '0 2 * * 5'
   workflow_dispatch:
 
