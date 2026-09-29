@@ -97,12 +97,31 @@ def detect_geometry_type(text, coords):
         
     return 'POINT'
 
+def is_valid_page(pdf_path, text):
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
+    if not lines:
+        return False
+    # Haftalık bültenlerde sadece Section II (Seyir Duyuruları) taranır
+    if "week_" in pdf_path:
+        if lines[0] == "II" or any("SECTION II" in l for l in lines[:3]):
+            return True
+        return False
+    # Yıllık bültende fihrist/indeks sayfaları atlanır
+    if "annual" in pdf_path:
+        if any("INDEX OF NOTICES" in l for l in lines[:3]):
+            return False
+        return True
+    return True
+
 def process_pdfs():
     os.makedirs(DATA_DIR, exist_ok=True)
-    pdf_files = glob.glob(os.path.join(PDF_DIR, "*.pdf"))
+    pdf_files = sorted(glob.glob(os.path.join(PDF_DIR, "*.pdf")))
     
     notices = []
     seen_ids = set()
+
+    # Satır başında başlayan gerçek T&P başlık deseni (Örn: 52(T)/26 IRELAND - East Coast - Buoy.)
+    header_pattern = re.compile(r'(?m)^(\d{1,5})\(([TP])\)/(\d{2,4})\s+(.+)$')
 
     print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] PDF dosyaları taranıyor...")
 
@@ -111,28 +130,23 @@ def process_pdfs():
             with pdfplumber.open(pdf_path) as pdf:
                 for page in pdf.pages:
                     raw_text = page.extract_text() or ""
-                    if "(T)/" not in raw_text and "(P)/" not in raw_text:
+                    if not is_valid_page(pdf_path, raw_text):
                         continue
                         
-                    notice_blocks = re.split(r'(?=\b\d{1,5}\([TP]\)/\d{2,4}\b)', raw_text)
-                    
-                    for block in notice_blocks:
-                        clean_block = block.strip()
-                        if "(T)/" not in clean_block and "(P)/" not in clean_block:
-                            continue
-
-                        # Sadece sayfa indekslerini ele
-                        if len(clean_block) < 35 and re.search(r'\d+\.\d+$', clean_block):
-                            continue
-                            
-                        header_match = re.search(r'\b(\d{1,5})\(([TP])\)/(\d{2,4})\b\s*(.*?)(?=\n|$)', clean_block)
-                        if not header_match:
-                            continue
-                            
-                        num = header_match.group(1)
-                        ntype = header_match.group(2)
-                        yr = header_match.group(3)
-                        subject = header_match.group(4).strip()
+                    # İlanları satır başındaki resmi başlıklardan böl
+                    matches = list(header_pattern.finditer(raw_text))
+                    if not matches:
+                        continue
+                        
+                    for i, m in enumerate(matches):
+                        start_pos = m.start()
+                        end_pos = matches[i+1].start() if i + 1 < len(matches) else len(raw_text)
+                        clean_block = raw_text[start_pos:end_pos].strip()
+                        
+                        num = m.group(1)
+                        ntype = m.group(2)
+                        yr = m.group(3)
+                        subject = m.group(4).strip()
                         notice_id = f"{num}({ntype})/{yr}"
                         
                         if notice_id in seen_ids:

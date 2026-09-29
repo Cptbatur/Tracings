@@ -275,9 +275,13 @@ function renderMarkers() {
     const hex = r.color === 'red' ? '#e53e3e' : '#d69e2e';
 
     if (r.notice.geometry_type === 'LINE' && coords.length >= 2) {
-      L.polyline(coords, { color:hex, weight:3 }).addTo(S.drawnGroup);
+      L.polyline(coords, { color:hex, weight:3 })
+       .bindPopup(`<b>${r.notice.id}</b><br>${r.notice.title}`)
+       .addTo(S.drawnGroup);
     } else if (r.notice.geometry_type === 'AREA' && coords.length >= 3) {
-      L.polygon(coords, { color:hex, weight:2, fillColor:hex, fillOpacity:0.3 }).addTo(S.drawnGroup);
+      L.polygon(coords, { color:hex, weight:2, fillColor:hex, fillOpacity:0.3 })
+       .bindPopup(`<b>${r.notice.id}</b><br>${r.notice.title}`)
+       .addTo(S.drawnGroup);
     } else {
       coords.forEach(pt => {
         L.circleMarker(pt, { radius:6, fillColor:hex, color:'#fff', weight:1, fillOpacity:0.9 })
