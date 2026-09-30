@@ -118,7 +118,7 @@ def process_pdfs():
     pdf_files = sorted(glob.glob(os.path.join(PDF_DIR, "*.pdf")))
     
     notices = []
-    seen_ids = set()
+    seen_ids = {}  # id -> index in notices list
 
     # Satır başında başlayan gerçek T&P başlık deseni (Örn: 52(T)/26 IRELAND - East Coast - Buoy.)
     header_pattern = re.compile(r'(?m)^(\d{1,5})\(([TP])\)/(\d{2,4})\s+(.+)$')
@@ -148,10 +148,26 @@ def process_pdfs():
                         yr = m.group(3)
                         subject = m.group(4).strip()
                         notice_id = f"{num}({ntype})/{yr}"
+                        is_continued = "(continued)" in subject.lower()
                         
                         if notice_id in seen_ids:
+                            # Devam sayfası: koordinatları mevcut ilana ekle
+                            extra_coords = extract_coordinates(clean_block)
+                            if extra_coords:
+                                idx = seen_ids[notice_id]
+                                existing = notices[idx]
+                                # Yinelenen koordinatları ekleme
+                                existing_set = {tuple(c) for c in existing["coordinates"]}
+                                for c in extra_coords:
+                                    if tuple(c) not in existing_set:
+                                        existing["coordinates"].append(c)
+                                        existing_set.add(tuple(c))
+                                existing["has_coordinates"] = len(existing["coordinates"]) > 0
+                                # Metni de birleştir (coordinate extraction için)
+                                existing["text"] += "\n" + clean_block
+                                # Geometriyi tüm koordinatlarla yeniden belirle
+                                existing["geometry_type"] = detect_geometry_type(existing["text"], existing["coordinates"])
                             continue
-                        seen_ids.add(notice_id)
                         
                         coords = extract_coordinates(clean_block)
                         gtype = detect_geometry_type(clean_block, coords)
@@ -159,12 +175,12 @@ def process_pdfs():
                         c_lat = coords[0][0] if coords else None
                         c_lon = coords[0][1] if coords else None
                         
-                        notices.append({
+                        notice_obj = {
                             "id": notice_id,
                             "number": int(num),
                             "type": ntype,
                             "year": int(yr) if len(yr)==4 else int("20"+yr),
-                            "title": subject or "T&P Notice",
+                            "title": subject.replace(" (continued)", "").replace(" (Continued)", "").strip() or "T&P Notice",
                             "region": subject.split('-')[0].strip() if '-' in subject else "UKHO",
                             "subject": subject,
                             "text": clean_block,
@@ -173,7 +189,9 @@ def process_pdfs():
                             "center_lon": c_lon,
                             "geometry_type": gtype,
                             "has_coordinates": len(coords) > 0
-                        })
+                        }
+                        seen_ids[notice_id] = len(notices)
+                        notices.append(notice_obj)
         except Exception:
             pass
 
