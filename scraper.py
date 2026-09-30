@@ -49,6 +49,41 @@ def extract_coordinates(text):
             
     return coords
 
+def coord_distance_nm(c1, c2):
+    """İki koordinat arasındaki yaklaşık mesafe (deniz mili)."""
+    import math
+    dlat = (c2[0] - c1[0]) * 60.0
+    avg_lat = math.radians((c1[0] + c2[0]) / 2.0)
+    dlon = (c2[1] - c1[1]) * 60.0 * math.cos(avg_lat)
+    return math.sqrt(dlat**2 + dlon**2)
+
+def split_into_segments(coords, gap_nm=30.0):
+    """
+    Koordinat listesini coğrafi sıçramaya göre segmentlere böler.
+    Art arda gelen iki nokta arasındaki mesafe gap_nm'den büyükse
+    yeni bir segment başlatır.
+    Örnek: A-Italy→Egypt, B-France→Egypt, C-Spain→Egypt
+    her biri ayrı segment olur.
+    """
+    if not coords:
+        return []
+    segments = []
+    current = [coords[0]]
+    for c in coords[1:]:
+        dist = coord_distance_nm(current[-1], c)
+        if dist > gap_nm:
+            if len(current) >= 2:
+                segments.append(current)
+            current = [c]
+        else:
+            current.append(c)
+    if len(current) >= 2:
+        segments.append(current)
+    elif current and segments:
+        # Tek kalan nokta önceki segmente ekle
+        segments[-1].append(current[0])
+    return segments
+
 def detect_geometry_type(text, coords):
     c_count = len(coords)
     if c_count < 2:
@@ -163,14 +198,16 @@ def process_pdfs():
                                         existing["coordinates"].append(c)
                                         existing_set.add(tuple(c))
                                 existing["has_coordinates"] = len(existing["coordinates"]) > 0
-                                # Metni de birleştir (coordinate extraction için)
+                                # Metni de birleştir
                                 existing["text"] += "\n" + clean_block
-                                # Geometriyi tüm koordinatlarla yeniden belirle
+                                # Geometriyi ve segmentleri tüm koordinatlarla yeniden belirle
                                 existing["geometry_type"] = detect_geometry_type(existing["text"], existing["coordinates"])
+                                existing["segments"] = split_into_segments(existing["coordinates"])
                             continue
                         
                         coords = extract_coordinates(clean_block)
                         gtype = detect_geometry_type(clean_block, coords)
+                        segments = split_into_segments(coords) if gtype == 'LINE' else []
                         
                         c_lat = coords[0][0] if coords else None
                         c_lon = coords[0][1] if coords else None
@@ -185,6 +222,7 @@ def process_pdfs():
                             "subject": subject,
                             "text": clean_block,
                             "coordinates": coords,
+                            "segments": segments,
                             "center_lat": c_lat,
                             "center_lon": c_lon,
                             "geometry_type": gtype,

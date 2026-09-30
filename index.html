@@ -274,10 +274,17 @@ function renderMarkers() {
     const coords = r.notice.coordinates || [];
     const hex = r.color === 'red' ? '#e53e3e' : '#d69e2e';
 
-    if (r.notice.geometry_type === 'LINE' && coords.length >= 2) {
-      L.polyline(coords, { color:hex, weight:3 })
-       .bindPopup(`<b>${r.notice.id}</b><br>${r.notice.title}`)
-       .addTo(S.drawnGroup);
+    if (r.notice.geometry_type === 'LINE') {
+      const segs = r.notice.segments && r.notice.segments.length > 0
+        ? r.notice.segments
+        : (coords.length >= 2 ? [coords] : []);
+      segs.forEach(seg => {
+        if (seg.length >= 2) {
+          L.polyline(seg, { color:hex, weight:3 })
+           .bindPopup(`<b>${r.notice.id}</b><br>${r.notice.title}`)
+           .addTo(S.drawnGroup);
+        }
+      });
     } else if (r.notice.geometry_type === 'AREA' && coords.length >= 3) {
       L.polygon(coords, { color:hex, weight:2, fillColor:hex, fillOpacity:0.3 })
        .bindPopup(`<b>${r.notice.id}</b><br>${r.notice.title}`)
