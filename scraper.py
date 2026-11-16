@@ -16,6 +16,16 @@ def normalize_text(txt):
     txt = txt.replace('´', "'").replace('`', "'").replace('’', "'")
     txt = txt.replace('·', '.').replace('•', '.')
     txt = txt.replace('”', '"').replace('“', '"')
+    
+    # 1. Satır kırılmasında rakam bölünmesini onar: örn '5° 5\n5´·79W' -> '5° 55.79W'
+    txt = re.sub(r'(\d+°\s*\d+)\s*\n\s*(\d+[\'\.]\d+[EWNS]\b)', r'\1\2', txt)
+    
+    # 2. Araya giren kelimeler (Pillar, Buoy vb.) ve satır kırılmasını onar:
+    txt = re.sub(r'(\d{1,3}\s*°\s*\d+)\s*\n\s*(?:[A-Za-z\s]+)?\s*(\d+[\'\.]\d+[EWNS]\b)', r'\1\2', txt)
+    
+    # 3. Yön harfi eksikliği onarımı (örn '20° 57.670. has been' -> '20° 57.670E. has been')
+    txt = re.sub(r'([NS]\b[\s\.,]+\d{1,3}\s*°\s*\d+(?:\.\d+)?(?:[\'\.]\d+)?)\s*[\.](?=\s+[a-z])', r'\1E.', txt)
+    
     return txt
 
 def parse_coord(lat_d, lat_m, lat_s, lat_dir, lon_d, lon_m, lon_s, lon_dir):
@@ -57,16 +67,32 @@ def coord_distance_nm(c1, c2):
     dlon = (c2[1] - c1[1]) * 60.0 * math.cos(avg_lat)
     return math.sqrt(dlat**2 + dlon**2)
 
-def split_into_segments(coords, gap_nm=30.0):
+def split_into_segments(text, coords, gap_nm=30.0):
     """
-    Koordinat listesini coğrafi sıçramaya göre segmentlere böler.
-    Art arda gelen iki nokta arasındaki mesafe gap_nm'den büyükse
-    yeni bir segment başlatır.
-    Örnek: A-Italy→Egypt, B-France→Egypt, C-Spain→Egypt
-    her biri ayrı segment olur.
+    Zabit Mantığı: Koordinatları öncelikle metin içindeki yapısal ayrımlara göre böler:
+    - Alt başlıklar: A -, B -, C - veya 1., 2., 3.
+    - 'and' ile başlayan yeni geçişler
+    - İki bağımsız alan/hat birbirine çok yakın (örn. 0.5 mil) olsa bile metin ayrımıyla korunur.
+    Eğer metin ayrımı yoksa coğrafi sıçramaya (gap_nm) göre böler.
     """
     if not coords:
         return []
+        
+    # Metni yapısal paragraflara böl (A -, B -, 1., 2. veya \n\n veya 'and' satır başı)
+    clean = normalize_text(text)
+    sub_blocks = re.split(r'(?m)(?:^\s*(?:[A-Z]\s*[\-–]|\d+\.\s+[A-Z]|\d+\.\s+and\b|\band\b|Area\s+[A-Z]\b))', clean)
+    
+    # Eğer metin içinde 2 veya daha fazla belirgin alt bölüm varsa ve koordinat içeriyorsa:
+    text_segments = []
+    for sb in sub_blocks:
+        sb_coords = extract_coordinates(sb)
+        if len(sb_coords) >= 2:
+            text_segments.append(sb_coords)
+            
+    if len(text_segments) >= 2:
+        return text_segments
+        
+    # Metin içi açık blok bulunamadıysa mesafeye göre (gap_nm) yedek bölme:
     segments = []
     current = [coords[0]]
     for c in coords[1:]:
@@ -80,7 +106,6 @@ def split_into_segments(coords, gap_nm=30.0):
     if len(current) >= 2:
         segments.append(current)
     elif current and segments:
-        # Tek kalan nokta önceki segmente ekle
         segments[-1].append(current[0])
     return segments
 
@@ -94,12 +119,20 @@ def detect_geometry_type(text, coords):
     # Açıkça geometrik sınır çizen UKHO kalıpları (geniş kapsam)
     # "bounded by the following positions", "bounded by lines joining",
     # "within an area bounded", "enclosed by", "limits defined by" vb.
+    # + Zabit Kuralı: Yasak/Atış/Kısıtlı Sahalar (Restricted, Prohibited, Firing, Danger Area)
+    has_restricted_area_kw = any(k in txt_low for k in [
+        'restricted area', 'prohibited area', 'firing practice', 'firing exercise',
+        'danger area', 'exercise area', 'spoil ground', 'dredging area', 'foul area',
+        'works area', 'anchorage prohibited'
+    ])
+
     has_explicit_area = (
         'bounded by' in txt_low or
         'within an area' in txt_low or
         'enclosed by' in txt_low or
         'limits defined by' in txt_low or
-        'within an area defined' in txt_low
+        'within an area defined' in txt_low or
+        has_restricted_area_kw
     ) and c_count >= 3
 
     # 1. Müstakil derinlik, sığlık ve ölçüm cihazı listeleri: Kesinlikle POINT
@@ -202,12 +235,12 @@ def process_pdfs():
                                 existing["text"] += "\n" + clean_block
                                 # Geometriyi ve segmentleri tüm koordinatlarla yeniden belirle
                                 existing["geometry_type"] = detect_geometry_type(existing["text"], existing["coordinates"])
-                                existing["segments"] = split_into_segments(existing["coordinates"])
+                                existing["segments"] = split_into_segments(existing["text"], existing["coordinates"]) if existing["geometry_type"] in ['LINE', 'AREA'] else []
                             continue
                         
                         coords = extract_coordinates(clean_block)
                         gtype = detect_geometry_type(clean_block, coords)
-                        segments = split_into_segments(coords) if gtype == 'LINE' else []
+                        segments = split_into_segments(clean_block, coords) if gtype in ['LINE', 'AREA'] else []
                         
                         c_lat = coords[0][0] if coords else None
                         c_lon = coords[0][1] if coords else None
