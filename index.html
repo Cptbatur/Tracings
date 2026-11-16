@@ -285,10 +285,23 @@ function renderMarkers() {
            .addTo(S.drawnGroup);
         }
       });
-    } else if (r.notice.geometry_type === 'AREA' && coords.length >= 3) {
-      L.polygon(coords, { color:hex, weight:2, fillColor:hex, fillOpacity:0.3 })
-       .bindPopup(`<b>${r.notice.id}</b><br>${r.notice.title}`)
-       .addTo(S.drawnGroup);
+    } else if (r.notice.geometry_type === 'AREA') {
+      const segs = r.notice.segments && r.notice.segments.length > 0
+        ? r.notice.segments
+        : (coords.length >= 3 ? [coords] : []);
+      segs.forEach(seg => {
+        if (seg.length >= 3) {
+          L.polygon(seg, { color:hex, weight:2, fillColor:hex, fillOpacity:0.3 })
+           .bindPopup(`<b>${r.notice.id}</b><br>${r.notice.title}`)
+           .addTo(S.drawnGroup);
+        } else if (seg.length > 0) {
+          seg.forEach(pt => {
+            L.circleMarker(pt, { radius:6, fillColor:hex, color:'#fff', weight:1, fillOpacity:0.9 })
+             .bindPopup(`<b>${r.notice.id}</b><br>${r.notice.title}`)
+             .addTo(S.drawnGroup);
+          });
+        }
+      });
     } else {
       coords.forEach(pt => {
         L.circleMarker(pt, { radius:6, fillColor:hex, color:'#fff', weight:1, fillOpacity:0.9 })

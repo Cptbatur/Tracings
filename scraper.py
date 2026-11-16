@@ -72,42 +72,49 @@ def split_into_segments(text, coords, gap_nm=30.0):
     Zabit Mantığı: Koordinatları öncelikle metin içindeki yapısal ayrımlara göre böler:
     - Alt başlıklar: A -, B -, C - veya 1., 2., 3.
     - 'and' ile başlayan yeni geçişler
-    - İki bağımsız alan/hat birbirine çok yakın (örn. 0.5 mil) olsa bile metin ayrımıyla korunur.
-    Eğer metin ayrımı yoksa coğrafi sıçramaya (gap_nm) göre böler.
+    - 'Dolphin Head', 'Allonby Bay' gibi isimli alt bölümler
+    - Ardından her segment içinde 50 NM'yi aşan sıçramalar varsa (derin su geçişleri) onları da böler.
     """
     if not coords:
         return []
         
-    # Metni yapısal paragraflara böl (A -, B -, 1., 2. veya \n\n veya 'and' satır başı)
     clean = normalize_text(text)
-    sub_blocks = re.split(r'(?m)(?:^\s*(?:[A-Z]\s*[\-–]|\d+\.\s+[A-Z]|\d+\.\s+and\b|\band\b|Area\s+[A-Z]\b))', clean)
+    # Metin içi açık bölücüler:
+    # 1. Numaralandırılmış maddeler: 1., 2., 3.
+    # 2. Harf bölümleri: A -, B -, C -
+    # 3. 'and' kelimesiyle başlayan satırlar veya 'and' geçişleri
+    # 4. İsimli alan başlıkları (örn: Dolphin Head, Allonby Bay)
+    split_pattern = r'(?m)(?:^\s*(?:\d+\.\s*(?:and\b|[A-Z])|[A-Z]\s*[\-–]\s+[A-Za-z]|\band\b|Area\s+[A-Z]\b|[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}\s*$))'
+    sub_blocks = re.split(split_pattern, clean)
     
-    # Eğer metin içinde 2 veya daha fazla belirgin alt bölüm varsa ve koordinat içeriyorsa:
-    text_segments = []
+    raw_segments = []
     for sb in sub_blocks:
         sb_coords = extract_coordinates(sb)
-        if len(sb_coords) >= 2:
-            text_segments.append(sb_coords)
+        if sb_coords:
+            raw_segments.append(sb_coords)
             
-    if len(text_segments) >= 2:
-        return text_segments
-        
-    # Metin içi açık blok bulunamadıysa mesafeye göre (gap_nm) yedek bölme:
-    segments = []
-    current = [coords[0]]
-    for c in coords[1:]:
-        dist = coord_distance_nm(current[-1], c)
-        if dist > gap_nm:
-            if len(current) >= 2:
-                segments.append(current)
-            current = [c]
-        else:
-            current.append(c)
-    if len(current) >= 2:
-        segments.append(current)
-    elif current and segments:
-        segments[-1].append(current[0])
-    return segments
+    if not raw_segments:
+        raw_segments = [coords]
+
+    # Her segment içindeki 50 NM'den büyük derin deniz sıçramalarını (Marsilya -> Mısır gibi) parçala
+    final_segments = []
+    for seg in raw_segments:
+        if len(seg) <= 1:
+            final_segments.append(seg)
+            continue
+        cur = [seg[0]]
+        for c in seg[1:]:
+            dist = coord_distance_nm(cur[-1], c)
+            if dist > 50.0:  # 50 milden büyük sıçramada kopar
+                if len(cur) >= 1:
+                    final_segments.append(cur)
+                cur = [c]
+            else:
+                cur.append(c)
+        if cur:
+            final_segments.append(cur)
+            
+    return final_segments
 
 def detect_geometry_type(text, coords):
     c_count = len(coords)
@@ -116,6 +123,15 @@ def detect_geometry_type(text, coords):
         
     txt_low = text.lower()
     
+    # Zabit Kuralı: Tablo halinde pafta veya fener/saha listesi içeren ilanlar (örn: 4233(P)/26)
+    # Her satırda ayrı bir sahanın tekil mevkisi verilmişse bu kapalı poligon değildir, POINT listesidir.
+    is_tabular_reference = any(k in txt_low for k in [
+        'largest scale chart', 'new designation', 'details of the areas are included in the list',
+        'legends', 'changes to certain charted'
+    ])
+    if is_tabular_reference:
+        return 'POINT'
+
     # Açıkça geometrik sınır çizen UKHO kalıpları (geniş kapsam)
     # "bounded by the following positions", "bounded by lines joining",
     # "within an area bounded", "enclosed by", "limits defined by" vb.
