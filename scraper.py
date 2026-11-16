@@ -69,21 +69,49 @@ def coord_distance_nm(c1, c2):
 
 def split_into_segments(text, coords, gap_nm=30.0):
     """
-    Zabit Mantığı: Koordinatları öncelikle metin içindeki yapısal ayrımlara göre böler:
-    - Alt başlıklar: A -, B -, C - veya 1., 2., 3.
-    - 'and' ile başlayan yeni geçişler
-    - 'Dolphin Head', 'Allonby Bay' gibi isimli alt bölümler
-    - Ardından her segment içinde 50 NM'yi aşan sıçramalar varsa (derin su geçişleri) onları da böler.
+    Evrensel Zabit Mantığı:
+    1. Hiyerarşik Ana Rota Kontrolü:
+       Eğer bülten 'A - Country to Country', 'B - Country to Country' gibi ana kablo/boru
+       güzergahlarına ayrılmışsa, önce ana hatları bağımsız güzergahlar (routes) olarak ayırır.
+       Böylece İtalya hattı, Fransa hattı ve İspanya hattı asla birbirine bağlanmaz!
+    2. Derin Su vs Kıyı Sığlık Ayrımı:
+       Aynı hat içinde bile aradaki derin deniz boşluğu (>80 NM) boyunca UKHO koordinat
+       vermemişse, harita üzerinde boydan boya sahte deniz aşırı düz çizgi çekilmez.
+       Her sığlık geçiş etabı (etap 1, etap 2...) nizami olarak gösterilir.
+    3. Çoklu Alan (HPMAs / Protected Areas):
+       'Dolphin Head', 'Allonby Bay' gibi farklı isimli sahalar kendi içinde bağımsız
+       poligonlar olarak ayrılır.
     """
     if not coords:
         return []
         
     clean = normalize_text(text)
-    # Metin içi açık bölücüler:
-    # 1. Numaralandırılmış maddeler: 1., 2., 3.
-    # 2. Harf bölümleri: A -, B -, C -
-    # 3. 'and' kelimesiyle başlayan satırlar veya 'and' geçişleri
-    # 4. İsimli alan başlıkları (örn: Dolphin Head, Allonby Bay)
+    
+    # 1. KADEME: Çok Hatlı Büyük Kablo Güzergahları (A - Italy..., B - France...)
+    major_routes = re.split(r'(?m)^\s*(?:\d+\.\s*)?([A-Z])\s*[\-–]\s+([^\n\[]+)', clean)
+    if len(major_routes) > 1:
+        route_segments = []
+        for idx in range(1, len(major_routes), 3):
+            content = major_routes[idx+2]
+            r_coords = extract_coordinates(content)
+            if not r_coords:
+                continue
+            # Bu ana hat içindeki derin su sıçramalarını (>80 NM) bölerek etapları oluştur:
+            cur_patch = [r_coords[0]]
+            for c in r_coords[1:]:
+                dist = coord_distance_nm(cur_patch[-1], c)
+                if dist > 80.0:  # Derin deniz boşluğunda yeni etaba geç
+                    if len(cur_patch) >= 1:
+                        route_segments.append(cur_patch)
+                    cur_patch = [c]
+                else:
+                    cur_patch.append(c)
+            if cur_patch:
+                route_segments.append(cur_patch)
+        if route_segments:
+            return route_segments
+
+    # 2. KADEME: İsimli Alanlar veya Madde Ayrımı (Dolphin Head, Allonby Bay, 1., 2. and...)
     split_pattern = r'(?m)(?:^\s*(?:\d+\.\s*(?:and\b|[A-Z])|[A-Z]\s*[\-–]\s+[A-Za-z]|\band\b|Area\s+[A-Z]\b|[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}\s*$))'
     sub_blocks = re.split(split_pattern, clean)
     
@@ -96,7 +124,7 @@ def split_into_segments(text, coords, gap_nm=30.0):
     if not raw_segments:
         raw_segments = [coords]
 
-    # Her segment içindeki 50 NM'den büyük derin deniz sıçramalarını (Marsilya -> Mısır gibi) parçala
+    # Her segment içindeki 80 NM'den büyük sıçramaları koru
     final_segments = []
     for seg in raw_segments:
         if len(seg) <= 1:
@@ -105,7 +133,7 @@ def split_into_segments(text, coords, gap_nm=30.0):
         cur = [seg[0]]
         for c in seg[1:]:
             dist = coord_distance_nm(cur[-1], c)
-            if dist > 50.0:  # 50 milden büyük sıçramada kopar
+            if dist > 80.0:
                 if len(cur) >= 1:
                     final_segments.append(cur)
                 cur = [c]
