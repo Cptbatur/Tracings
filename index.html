@@ -3,57 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tracings - Admiralty T&P Route Audit</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Tracings — Köprüüstü T&P Rota Kontrolü</title>
+<meta name="theme-color" content="#060b14">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
+/* ============ TRACINGS GECE KÖPRÜÜSTÜ TEMASI v2 (tp-ui-developer, 2026-11-25) ============
+   Dark-first: zemin #060b14 (saf siyaha yakın, gece körlüğü yapmaz); metin #f1f5f9
+   Kontrast: birincil metin ~16:1, ikincil ~7:1, muted ~4.6:1 (WCAG AA üstü).
+   Dokunmatik: tüm buton/chip min-height 48px (eldiven). Kırmızı=tehlike, mavi=bilgi,
+   amber=caution bandı (CHCOR sembolü çizilmez — K7/K8, haritada turuncu manual-update yok).
+   Font: sistem stack (harici bağımlılık yok — gemi interneti). */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0b111e;--bg-soft:#111b2b;--card:#142236;--card-border:rgba(255,255,255,0.07);
-  --card-hover:#192b45;--inner:#0c1524;
-  --primary:#0284c7;--primary-glow:rgba(2,132,199,0.35);--primary-light:#38bdf8;
-  --text:#f8fafc;--text-dim:#94a3b8;--text-muted:#64748b;
-  --red:#f43f5e;--red-bg:rgba(244,63,94,0.12);--red-border:rgba(244,63,94,0.35);
-  --amber:#f59e0b;--amber-bg:rgba(245,158,11,0.12);--amber-border:rgba(245,158,11,0.35);
-  --emerald:#10b981;--emerald-bg:rgba(16,185,129,0.12);
-  --header-h:60px;--nav-h:64px;
+  --bg:#060b14;--bg-soft:#0b1422;--card:#0e1a2e;--card-border:rgba(148,184,220,0.14);
+  --card-hover:#14263f;--inner:#080f1c;
+  --primary:#0ea5e9;--primary-deep:#0369a1;--primary-glow:rgba(14,165,233,0.35);--primary-light:#7dd3fc;
+  --text:#f1f5f9;--text-dim:#b6c6da;--text-muted:#8b9cb3;
+  --red:#ff5d73;--red-deep:#c81e3a;--red-bg:rgba(255,93,115,0.14);--red-border:rgba(255,93,115,0.45);
+  --amber:#ffb224;--amber-bg:rgba(255,178,36,0.13);--amber-border:rgba(255,178,36,0.45);
+  --emerald:#34d399;--emerald-bg:rgba(52,211,153,0.13);
+  --focus:#7dd3fc;
+  --header-h:60px;--nav-h:72px;
+  --tap:48px;
+  --font-sys:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
 }
 
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;letter-spacing:-0.2px}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-sys);font-size:15px;line-height:1.5}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
 #app{display:flex;flex-direction:column;height:100vh}
 
 /* HEADER */
 #hdr{
-  height:var(--header-h);background:rgba(11,17,30,0.85);backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--card-border);display:flex;align-items:center;padding:0 20px;gap:16px;z-index:20;
+  height:var(--header-h);background:rgba(6,11,20,0.92);
+  border-bottom:1px solid var(--card-border);display:flex;align-items:center;padding:0 16px;gap:12px;z-index:20;
 }
-#hdr-logo{font-size:17px;font-weight:800;display:flex;align-items:center;gap:10px;color:#fff}
+#hdr-logo{font-size:17px;font-weight:800;display:flex;align-items:center;gap:10px;color:#fff;letter-spacing:0.01em}
+.hdr-sub{font-size:10.5px;font-weight:600;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;display:block;line-height:1.2}
 .logo-icon{
-  width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0284c7,#38bdf8);
-  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px var(--primary-glow);
+  width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#0ea5e9,#0369a1);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px var(--primary-glow);flex:none;
 }
-.logo-icon svg{width:18px;height:18px;fill:#fff}
-#hdr-stats{margin-left:auto;display:flex;align-items:center;gap:10px}
+.logo-icon svg{width:20px;height:20px;fill:#fff}
+#hdr-stats{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 
 .stat-pill{
-  display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;
-  font-size:12px;font-weight:700;transition:all 0.2s;
+  display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;
+  font-size:12.5px;font-weight:700;transition:all 0.2s;min-height:36px;
 }
 .stat-pill.red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
 .stat-pill.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
-.stat-pill.ready{background:rgba(255,255,255,0.05);color:var(--text-dim);border:1px solid var(--card-border)}
+.stat-pill.ready{background:rgba(125,211,252,0.08);color:var(--text-dim);border:1px solid var(--card-border)}
 
 /* MAIN CONTENT TABS */
-#tab-wrap{flex:1;overflow:hidden;position:relative}
-.tab{display:none;height:100%;overflow-y:auto;padding:20px}
+#tab-wrap{flex:1;overflow:hidden;position:relative;
+  background:
+    radial-gradient(1100px 320px at 50% -120px, rgba(14,165,233,0.10), transparent 70%),
+    var(--bg);
+}
+.tab{display:none;height:100%;overflow-y:auto;padding:20px;max-width:980px;margin:0 auto;width:100%}
 .tab.active{display:block}
-#tab-map{padding:0}
+#tab-map{padding:0;max-width:none}
+
+/* VALUE PROP (ilk 10 saniye: ne yapar, 3 adım) */
+.value-strip{display:flex;gap:10px;align-items:stretch;margin-bottom:16px;flex-wrap:wrap}
+.value-main{flex:2;min-width:240px;background:linear-gradient(135deg,rgba(14,165,233,0.16),rgba(14,165,233,0.03));
+  border:1px solid rgba(125,211,252,0.25);border-radius:14px;padding:14px 16px}
+.value-main b{font-size:15px;color:#fff;display:block;margin-bottom:2px}
+.value-main span{font-size:12.5px;color:var(--text-dim)}
+.value-steps{flex:1;min-width:200px;display:flex;gap:8px;align-items:stretch}
+.value-step{flex:1;background:var(--card);border:1px solid var(--card-border);border-radius:14px;
+  padding:10px 12px;font-size:12px;color:var(--text-dim);font-weight:600;display:flex;gap:8px;align-items:center;min-height:var(--tap)}
+.value-step i{font-style:normal;font-weight:800;color:var(--primary-light);font-size:14px}
 
 /* CARDS */
 .card{
@@ -66,103 +90,106 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 }
 
 /* DROPZONE */
-#drop-zone{
-  border:2px dashed rgba(56,189,248,0.25);border-radius:14px;padding:36px 20px;
+#drop-zone,#conv-drop{
+  border:2px dashed rgba(125,211,252,0.35);border-radius:14px;padding:36px 20px;
   text-align:center;cursor:pointer;position:relative;background:var(--inner);
-  transition:all 0.25s ease;
+  transition:border-color 0.25s ease, background 0.25s ease;min-height:200px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
 }
-#drop-zone:hover{border-color:var(--primary-light);background:rgba(2,132,199,0.05);transform:translateY(-1px)}
-#drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+#drop-zone:hover,#conv-drop:hover{border-color:var(--primary-light);background:rgba(14,165,233,0.06)}
+#drop-zone input,#conv-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .dz-circle{
-  width:52px;height:52px;border-radius:50%;background:rgba(2,132,199,0.12);
-  margin:0 auto 12px;display:flex;align-items:center;justify-content:center;
+  width:60px;height:60px;border-radius:50%;background:rgba(14,165,233,0.14);
+  margin:0 auto 12px;display:flex;align-items:center;justify-content:center;flex:none;
 }
-.dz-circle svg{width:26px;height:26px;fill:var(--primary-light)}
+.dz-circle svg{width:28px;height:28px;fill:var(--primary-light)}
+.dz-hint{font-size:12.5px;color:var(--text-muted);margin-top:4px}
 
 /* CONVERT TAB */
-#conv-drop{
-  border:2px dashed rgba(16,185,129,0.3);border-radius:14px;padding:28px 20px;
-  text-align:center;cursor:pointer;position:relative;background:var(--inner);
-  transition:all 0.25s ease;
-}
-#conv-drop:hover{border-color:var(--emerald);background:rgba(16,185,129,0.05)}
-#conv-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+#conv-drop{border-color:rgba(52,211,153,0.4);padding:28px 20px;min-height:180px}
+#conv-drop:hover{border-color:var(--emerald);background:rgba(52,211,153,0.06)}
 .fmt-badge{
-  display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;
-  padding:4px 12px;border-radius:20px;background:rgba(16,185,129,0.15);
-  color:var(--emerald);border:1px solid rgba(16,185,129,0.35);
+  display:inline-block;font-family:var(--font-mono);font-size:11px;font-weight:700;
+  padding:6px 12px;border-radius:20px;background:rgba(52,211,153,0.15);
+  color:var(--emerald);border:1px solid rgba(52,211,153,0.4);
 }
-.fmt-badge.unknown{background:rgba(245,158,11,0.12);color:var(--amber);border-color:rgba(245,158,11,0.35)}
-#conv-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+.fmt-badge.unknown{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-border)}
+#conv-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
 #conv-table th{
-  text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;
-  color:var(--text-muted);padding:8px;border-bottom:1px solid var(--card-border);
-  font-family:'JetBrains Mono',monospace;
+  text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px;
+  color:var(--text-muted);padding:10px 8px;border-bottom:1px solid var(--card-border);
+  font-family:var(--font-mono);
 }
-#conv-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:'JetBrains Mono',monospace}
-#conv-table tr:hover td{background:rgba(2,132,199,0.06)}
+#conv-table td{padding:9px 8px;border-bottom:1px solid rgba(148,184,220,0.08);font-family:var(--font-mono)}
+#conv-table tr:hover td{background:rgba(14,165,233,0.07)}
 .conv-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .btn-conv{
-  flex:1;min-width:140px;padding:13px;border:none;border-radius:12px;cursor:pointer;
-  font-weight:800;font-size:13px;color:#fff;font-family:inherit;
+  flex:1;min-width:150px;min-height:var(--tap);padding:13px;border:none;border-radius:12px;cursor:pointer;
+  font-weight:800;font-size:13.5px;color:#fff;font-family:inherit;
   display:flex;align-items:center;justify-content:center;gap:8px;
 }
 .btn-conv:disabled{opacity:0.35;cursor:not-allowed}
-.btn-rtz{background:linear-gradient(135deg,#0284c7,#0369a1);box-shadow:0 4px 16px rgba(2,132,199,0.35)}
-.btn-gpx{background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 16px rgba(16,185,129,0.35)}
-.btn-map{background:linear-gradient(135deg,#8b5cf6,#7c3aed);box-shadow:0 4px 16px rgba(139,92,246,0.35)}
+.btn-conv:not(:disabled):hover{filter:brightness(1.12)}
+.btn-rtz{background:linear-gradient(135deg,#0ea5e9,#0369a1);box-shadow:0 4px 16px rgba(14,165,233,0.35)}
+.btn-gpx{background:linear-gradient(135deg,#10b981,#047857);box-shadow:0 4px 16px rgba(16,185,129,0.35)}
+.btn-map{background:linear-gradient(135deg,#38bdf8,#0369a1);box-shadow:0 4px 16px rgba(14,165,233,0.35)}
 
 /* PARAMS */
 .param-row{
-  display:flex;justify-content:space-between;align-items:center;padding:12px 0;
-  border-bottom:1px solid rgba(255,255,255,0.04);
+  display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;
+  border-bottom:1px solid rgba(148,184,220,0.08);min-height:64px;
 }
 .param-row:last-child{border-bottom:none}
-.param-label{font-size:13px;font-weight:600}
-.param-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
-.param-inp-wrap{display:flex;align-items:center;gap:6px}
+.param-label{font-size:14px;font-weight:700}
+.param-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.param-inp-wrap{display:flex;align-items:center;gap:8px;flex:none}
 .param-inp-wrap input{
   background:var(--inner);border:1px solid var(--card-border);color:#fff;
-  padding:8px 12px;width:80px;text-align:right;border-radius:10px;font-weight:700;
-  font-family:'JetBrains Mono',monospace;font-size:13px;
+  padding:12px;width:92px;text-align:right;border-radius:10px;font-weight:700;
+  font-family:var(--font-mono);font-size:14px;min-height:var(--tap);
 }
 .param-inp-wrap input:focus{outline:none;border-color:var(--primary-light)}
 
 /* PRIMARY BUTTON */
 .btn-action{
-  width:100%;padding:16px;background:linear-gradient(135deg,#0284c7,#0369a1);
-  color:#fff;border:none;border-radius:14px;font-weight:800;font-size:14px;
+  width:100%;min-height:56px;padding:16px;background:linear-gradient(135deg,#0ea5e9,#0369a1);
+  color:#fff;border:none;border-radius:14px;font-weight:800;font-size:15px;
   letter-spacing:0.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  gap:10px;box-shadow:0 8px 24px var(--primary-glow);transition:all 0.2s ease;
+  gap:10px;box-shadow:0 8px 24px var(--primary-glow);transition:filter 0.2s ease;
 }
-.btn-action:hover{filter:brightness(1.1);transform:translateY(-1px)}
-.btn-action:disabled{opacity:0.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-action:hover{filter:brightness(1.1)}
+.btn-action:disabled{opacity:0.4;cursor:not-allowed;box-shadow:none}
 
 /* MAP */
 #map-wrap{height:100%;width:100%;position:relative}
 #lmap{height:100%;width:100%;background:#090d16}
 
 /* REPORT CONTROLS */
-.rpt-top-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:center}
+.rpt-top-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
 .rpt-search-box{flex:1;min-width:220px;position:relative}
 .rpt-search-box input{
   width:100%;background:var(--card);border:1px solid var(--card-border);border-radius:12px;
-  padding:12px 14px 12px 38px;color:#fff;font-size:13px;
+  padding:14px 14px 14px 40px;color:#fff;font-size:14px;min-height:var(--tap);
 }
 .rpt-search-box input:focus{outline:none;border-color:var(--primary-light)}
-.rpt-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);fill:var(--text-muted);width:16px;height:16px}
+.rpt-search-box input::placeholder{color:var(--text-muted)}
+.rpt-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);fill:var(--text-muted);width:18px;height:18px}
 
 .f-chip{
-  padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  padding:10px 16px;border-radius:20px;font-size:13px;font-weight:700;min-height:var(--tap);
   background:var(--card);border:1px solid var(--card-border);color:var(--text-dim);cursor:pointer;
-  transition:all 0.15s;
+  transition:background 0.15s,border-color 0.15s;display:inline-flex;align-items:center;
 }
-.f-chip.active{background:rgba(2,132,199,0.2);color:var(--primary-light);border-color:var(--primary)}
+.f-chip.active{background:rgba(14,165,233,0.22);color:var(--primary-light);border-color:var(--primary)}
+/* Durum çipleri mavi vurgudan ayrılır: Aktif=yeşil, İptal=gri (T&P anlamı — S6/K2) */
+#fs-active.active{background:rgba(52,211,153,0.16);color:var(--emerald);border-color:var(--emerald)}
+#fs-cancelled.active{background:rgba(139,156,179,0.16);color:#c3cfdf;border-color:#8b9cb3}
+.f-chip:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 .btn-print{
   background:var(--card);border:1px solid var(--card-border);color:#fff;
-  padding:10px 16px;border-radius:12px;font-weight:700;font-size:12px;
-  cursor:pointer;margin-left:auto;display:flex;align-items:center;gap:8px;
+  padding:10px 18px;border-radius:12px;font-weight:700;font-size:13px;min-height:var(--tap);
+  cursor:pointer;margin-left:auto;display:inline-flex;align-items:center;gap:8px;
 }
 .btn-print:hover{background:var(--card-hover)}
 
@@ -172,38 +199,39 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   margin-bottom:12px;overflow:hidden;transition:all 0.2s ease;
 }
 .rpt-item-card:hover{border-color:rgba(255,255,255,0.18)}
-.rpt-card-main{display:flex;align-items:center;padding:16px;cursor:pointer;gap:14px}
+.rpt-card-main{display:flex;align-items:center;padding:16px;cursor:pointer;gap:14px;min-height:64px}
 .item-tag{
-  padding:4px 8px;border-radius:6px;font-size:10px;font-weight:800;
-  letter-spacing:0.5px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;
+  padding:5px 9px;border-radius:6px;font-size:10.5px;font-weight:800;
+  letter-spacing:0.5px;text-transform:uppercase;font-family:var(--font-mono);flex:none;
 }
 .tag-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
 .tag-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
-/* S6: status rozetleri (K2/S1/S3+S6 kaptan onayı) */
-.tag-green{background:var(--emerald-bg);color:var(--emerald);border:1px solid rgba(16,185,129,0.35)}
-.tag-grey{background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.35)}
+/* S6: status rozetleri (K2/S1/S3+S6 kaptan onayı) — yeşil Aktif / gri İptal */
+.tag-green{background:rgba(52,211,153,0.14);color:var(--emerald);border:1px solid rgba(52,211,153,0.45)}
+.tag-grey{background:rgba(139,156,179,0.14);color:#aeb9cc;border:1px solid rgba(139,156,179,0.4)}
 /* S6: sabit uyarı bloğu */
-.rpt-warn-block{background:rgba(245,158,11,0.08);border:1px solid var(--amber-border);border-radius:12px;
-  padding:12px 16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:var(--text-dim)}
+.rpt-warn-block{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:12px;
+  padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;color:var(--text-dim)}
 .rpt-warn-block strong{color:var(--amber)}
 /* E5: GENEL BİLGİ bölümü (KAPTAN E5 kararı + test-denetim.md E5; analiz dışı, sadece teşhir) */
-.rpt-gen-block{background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.35);border-radius:12px;
-  padding:12px 16px;margin-top:16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:var(--text-dim)}
-.rpt-gen-block strong{color:#93c5fd}
-.rpt-gen-title{font-size:14px;font-weight:800;color:#93c5fd;letter-spacing:0.06em;margin-bottom:4px}
-.src-line{font-size:11px;color:var(--text-muted);margin-top:6px;font-family:'JetBrains Mono',monospace}
+.rpt-gen-block{background:rgba(14,165,233,0.08);border:1px solid rgba(125,211,252,0.35);border-radius:12px;
+  padding:14px 16px;margin-top:16px;margin-bottom:16px;font-size:13px;line-height:1.6;color:var(--text-dim)}
+.rpt-gen-block strong{color:var(--primary-light)}
+.rpt-gen-title{font-size:14px;font-weight:800;color:var(--primary-light);letter-spacing:0.06em;margin-bottom:4px}
+.rpt-count{font-size:12px;font-weight:700;color:var(--text-muted)}
+.src-line{font-size:11.5px;color:var(--text-muted);margin-top:6px;font-family:var(--font-mono)}
 .src-line.unverified{color:var(--amber);font-weight:700}
 
-.item-id-wrap{min-width:110px}
-.item-id{font-size:14px;font-weight:800;color:var(--primary-light);font-family:'JetBrains Mono',monospace}
+.item-id-wrap{min-width:110px;flex:none}
+.item-id{font-size:14px;font-weight:800;color:var(--primary-light);font-family:var(--font-mono)}
 .item-geo{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-top:2px}
 
-.item-center{flex:1}
-.item-title{font-size:13px;font-weight:700;color:#f8fafc;line-height:1.4}
-.item-region{font-size:11px;color:var(--text-muted);margin-top:2px}
+.item-center{flex:1;min-width:0}
+.item-title{font-size:13.5px;font-weight:700;color:var(--text);line-height:1.4;overflow-wrap:anywhere}
+.item-region{font-size:11.5px;color:var(--text-muted);margin-top:2px}
 
-.item-dist-wrap{text-align:right;min-width:80px}
-.item-dist{font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace}
+.item-dist-wrap{text-align:right;min-width:84px;flex:none}
+.item-dist{font-size:17px;font-weight:800;font-family:var(--font-mono)}
 .item-dist.red{color:var(--red)}
 .item-dist.amber{color:var(--amber)}
 .item-dist-lbl{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase}
@@ -212,48 +240,66 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .rpt-card-expanded{display:none;background:var(--inner);border-top:1px solid var(--card-border);padding:18px}
 .rpt-item-card.open .rpt-card-expanded{display:block}
 
-.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
-.info-box{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:10px}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.info-box{background:rgba(125,211,252,0.04);border:1px solid rgba(148,184,220,0.12);border-radius:10px;padding:10px}
 .info-box-lbl{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px}
-.info-box-val{font-size:12px;font-weight:700;color:#fff}
+.info-box-val{font-size:12.5px;font-weight:700;color:#fff}
 
 .raw-text-panel{
-  background:#060a12;border:1px solid rgba(255,255,255,0.05);border-radius:10px;
-  padding:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#cbd5e1;
-  white-space:pre-wrap;line-height:1.6;max-height:240px;overflow-y:auto;
+  background:#04070d;border:1px solid rgba(148,184,220,0.12);border-radius:10px;
+  padding:14px;font-family:var(--font-mono);font-size:11.5px;color:#d3deeb;
+  white-space:pre-wrap;line-height:1.65;max-height:240px;overflow-y:auto;overflow-wrap:anywhere;
 }
 
 .bottom-action-bar{display:flex;justify-content:flex-end;margin-top:14px}
 .btn-fly{
-  background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;
-  border-radius:10px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;
+  background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border:none;
+  border-radius:10px;padding:12px 22px;font-size:13px;font-weight:800;cursor:pointer;min-height:var(--tap);
   display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px var(--primary-glow);
 }
+.btn-fly:hover{filter:brightness(1.12)}
 
 /* EMPTY STATE */
 .empty-box{
-  text-align:center;padding:50px 20px;background:var(--card);
-  border:1px solid var(--card-border);border-radius:16px;color:var(--text-muted);
+  text-align:center;padding:52px 22px;background:var(--card);
+  border:1px dashed rgba(125,211,252,0.3);border-radius:16px;color:var(--text-muted);
 }
+.empty-box b{color:#fff}
+.empty-cta{margin-top:14px;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0ea5e9,#0369a1);
+  color:#fff;border:none;border-radius:12px;padding:12px 22px;font-weight:800;font-size:13.5px;cursor:pointer;min-height:var(--tap)}
 .empty-icon{
-  width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.03);
+  width:64px;height:64px;border-radius:50%;background:rgba(14,165,233,0.1);
   margin:0 auto 16px;display:flex;align-items:center;justify-content:center;
 }
 .empty-icon svg{width:32px;height:32px;fill:var(--text-muted)}
 
 /* BOTTOM NAVIGATION DOCK */
 #bnav{
-  height:var(--nav-h);background:rgba(15,24,38,0.92);backdrop-filter:blur(20px);
-  border-top:1px solid var(--card-border);display:flex;z-index:20;padding:6px 12px;gap:8px;
+  height:var(--nav-h);background:rgba(6,11,20,0.95);
+  border-top:1px solid var(--card-border);display:flex;z-index:20;padding:8px 12px;gap:8px;
 }
 .nav-tab{
   flex:1;background:none;border:none;color:var(--text-muted);font-weight:700;
   font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:4px;border-radius:12px;transition:all 0.2s ease;
+  justify-content:center;gap:5px;border-radius:12px;transition:background 0.2s ease;min-height:56px;
 }
-.nav-tab svg{width:20px;height:20px;fill:currentColor}
+.nav-tab svg{width:22px;height:22px;fill:currentColor}
 .nav-tab.active{
-  color:var(--primary-light);background:rgba(2,132,199,0.12);
+  color:var(--primary-light);background:rgba(14,165,233,0.14);
+}
+
+/* RESPONSIVE — köprüüstü tableti + telefon */
+@media (max-width:640px){
+  .tab{padding:14px}
+  .rpt-card-main{flex-wrap:wrap;gap:10px}
+  .item-dist-wrap{min-width:0;margin-left:auto}
+  .value-steps{flex-direction:column}
+  #hdr-logo .hdr-sub{display:none}
+  .stat-pill{font-size:11px;padding:6px 10px}
+}
+/* Gece kısık-ışık: saf siyah seven ECDIS modu */
+@media (prefers-color-scheme:dark){
+  :root{--bg:#04070d}
 }
 
 /* PRINT MEDIA */
@@ -291,6 +337,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       </div>
       <span>Tracings</span>
+      <span class="hdr-sub">T&amp;P Rota Kontrolü</span>
     </div>
     <div id="hdr-stats">
       <div id="stat-red" class="stat-pill red" style="display:none">0 Conflict</div>
@@ -302,11 +349,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <!-- CONTENT VIEW -->
   <main id="tab-wrap">
 
-    <!-- TAB 1: IMPORT -->
+    <!-- TAB 1: ROTA YÜKLE (audit akışı) -->
     <section id="tab-import" class="tab active">
+      <div class="value-strip">
+        <div class="value-main">
+          <b>Rotanı yükle, T&amp;P çakışmasını 10 saniyede gör</b>
+          <span>Admiralty haftalık bültenindeki 3000+ geçici duyuruya karşı rotanı en yakın geçiş mesafesiyle (CPA) denetler.</span>
+        </div>
+        <div class="value-steps">
+          <div class="value-step"><i>1</i> Rotayı yükle</div>
+          <div class="value-step"><i>2</i> Kontrolü çalıştır</div>
+          <div class="value-step"><i>3</i> Raporu oku</div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-title">
-          <span>Electronic Route</span>
+          <span>Elektronik Rota</span>
           <span style="color:var(--primary-light)">RTZ / GPX</span>
         </div>
         <div id="drop-zone">
@@ -314,18 +372,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="dz-circle">
             <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
           </div>
-          <div style="font-weight:800;font-size:15px;color:#fff">Upload Passage Plan Route</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Tap or drop your ECDIS .rtz or standard .gpx route file</div>
+          <div style="font-weight:800;font-size:15px;color:#fff">Sefer Rotasını Yükle</div>
+          <div class="dz-hint">ECDIS'ten .rtz ya da standart .gpx dosyasına dokun — eldivenle de basılır</div>
           <div id="file-info" style="margin-top:12px;font-weight:700;color:var(--emerald);font-size:13px"></div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">Safety Corridor & Margins</div>
+        <div class="card-title">Emniyet Koridoru ve Limitler</div>
         <div class="param-row">
           <div>
-            <div class="param-label">Caution Search Corridor</div>
-            <div class="param-sub">Surrounding proximity alert boundary</div>
+            <div class="param-label">Dikkat Arama Koridoru</div>
+            <div class="param-sub">Rota çevresinde taranan uyarı mesafesi (CPA üst sınırı)</div>
           </div>
           <div class="param-inp-wrap">
             <input type="number" id="inp-safety" value="15" step="0.5">
@@ -334,8 +392,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
         <div class="param-row">
           <div>
-            <div class="param-label">Cross-Track Limit (XTD)</div>
-            <div class="param-sub">Immediate navigational hazard zone</div>
+            <div class="param-label">Rota Hattı Limiti (XTD)</div>
+            <div class="param-sub">Bu mesafenin altı kritik çakışma sayılır (kırmızı)</div>
           </div>
           <div class="param-inp-wrap">
             <input type="number" id="inp-xtd" value="0.5" step="0.1">
@@ -346,11 +404,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
       <button id="analyze-btn" class="btn-action" disabled onclick="runAnalysis()">
         <svg style="width:18px;height:18px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 14.59L8.71 12.3a1 1 0 111.41-1.42L13 13.76l4.88-4.88a1 1 0 111.41 1.41L13 16.59z"/></svg>
-        <span>EXECUTE ROUTE AUDIT</span>
+        <span>ROTAYI DENETLE</span>
       </button>
     </section>
 
-    <!-- TAB 2: CONVERT (rota format çevirici) -->
+    <!-- TAB 2: FORMAT ÇEVİRİCİ (rota format çevirici) -->
     <section id="tab-convert" class="tab">
       <div class="card">
         <div class="card-title">
@@ -359,17 +417,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
         <div id="conv-drop">
           <input type="file" id="conv-inp" accept=".rtz,.gpx,.rt3,.cvt,.csv,.txt,.rte,.fev,.jan,.rkz,.csv">
-          <div class="dz-circle" style="background:rgba(16,185,129,0.12)">
+          <div class="dz-circle" style="background:rgba(52,211,153,0.14)">
             <svg style="fill:var(--emerald)" viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
           </div>
           <div style="font-weight:800;font-size:15px;color:#fff">Çevrilecek Rotayı Yükle</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">RTZ · GPX · RT3 · CVT · CSV (FURUNO/JRC/Genel) · RTE (Transas binary)</div>
+          <div class="dz-hint">RTZ · GPX · RT3 · CVT · CSV (FURUNO/JRC/Genel) · RTE (Transas binary)</div>
           <div id="conv-info" style="margin-top:12px;font-weight:700;color:var(--emerald);font-size:13px"></div>
         </div>
       </div>
 
       <div class="card" id="conv-prev-card" style="display:none">
-        <div class="card-title"><span>Önizleme</span><span id="conv-count" style="color:var(--emerald)"></span></div>
+        <div class="card-title"><span>Önizleme</span><span id="conv-count" class="rpt-count" style="color:var(--emerald)"></span></div>
         <div style="max-height:240px;overflow-y:auto">
           <table id="conv-table">
             <thead><tr><th>#</th><th>İsim</th><th>Enlem</th><th>Boylam</th></tr></thead>
@@ -381,18 +439,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <button class="btn-conv btn-gpx" id="dl-gpx" onclick="downloadConv('gpx')" disabled>⬇ GPX İNDİR</button>
           <button class="btn-conv btn-map" onclick="previewOnMap()">🗺 HARİTADA GÖR</button>
         </div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:10px">İç format: ondalık derece WGS84 waypoint dizisi. RTZ = IEC 61174, GPX = GPX 1.1.</div>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-top:10px">İç format: ondalık derece WGS84 waypoint dizisi. RTZ = IEC 61174, GPX = GPX 1.1.</div>
+      </div>
+      <div class="card" id="conv-empty" style="display:none">
+        <div class="card-title">Henüz Rota Yok</div>
+        <div style="font-size:13px;color:var(--text-dim)">Eski cihaz çıktını (RT3, CVT, CSV, RTE) yükle — önizlemesi burada belirir, tek dokunuşla ECDIS'in okuduğu RTZ'ye çevrilir.</div>
       </div>
     </section>
 
-    <!-- TAB 3: MAP -->
+    <!-- TAB 3: HARİTA -->
     <section id="tab-map" class="tab">
       <div id="map-wrap">
         <div id="lmap"></div>
       </div>
     </section>
 
-    <!-- TAB 3: AUDIT REPORT -->
+    <!-- TAB 4: DENETİM RAPORU -->
     <section id="tab-report" class="tab">
       <div class="print-banner">
         <h1>ADMIRALTY T&P NOTICES TO MARINERS - PASSAGE PLAN AUDIT REPORT</h1>
@@ -402,18 +464,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="rpt-top-bar">
         <div class="rpt-search-box">
           <svg class="rpt-search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          <input type="text" id="rpt-filter-input" placeholder="Search Notice ID, BA Chart number (e.g. 166), or keywords..." oninput="filterReport()">
+          <input type="text" id="rpt-filter-input" placeholder="Duyuru no, harita no (örn. 166) ya da anahtar kelime ara…" oninput="filterReport()">
         </div>
-        <button class="f-chip active" id="f-all" onclick="setSeverityFilter('ALL')">All Notices</button>
-        <button class="f-chip" id="f-red" onclick="setSeverityFilter('RED')">Critical (XTD)</button>
-        <button class="f-chip" id="f-amber" onclick="setSeverityFilter('AMBER')">Caution</button>
+        <button class="f-chip active" id="f-all" onclick="setSeverityFilter('ALL')">Tümü</button>
+        <button class="f-chip" id="f-red" onclick="setSeverityFilter('RED')">Kritik (XTD)</button>
+        <button class="f-chip" id="f-amber" onclick="setSeverityFilter('AMBER')">Dikkat</button>
         <!-- S6: status filtresi (K2/S1/S3 cevabı + KAPTAN S6 EVET) -->
-        <button class="f-chip active" id="fs-active" onclick="setStatusFilter('ACTIVE')">Active</button>
-        <button class="f-chip" id="fs-cancelled" onclick="setStatusFilter('CANCELLED')">Cancelled</button>
-        <button class="f-chip" id="fs-all" onclick="setStatusFilter('ALL')">All Status</button>
+        <button class="f-chip active" id="fs-active" onclick="setStatusFilter('ACTIVE')">Yürürlükte</button>
+        <button class="f-chip" id="fs-cancelled" onclick="setStatusFilter('CANCELLED')">İptal</button>
+        <button class="f-chip" id="fs-all" onclick="setStatusFilter('ALL')">Tümü (durum)</button>
         <button class="btn-print" onclick="exportPrintableReport()">
           <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
-          <span>Export Passage Plan</span>
+          <span>Sefer Raporu Yazdır</span>
         </button>
       </div>
 
@@ -428,8 +490,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="empty-icon">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           </div>
-          <div style="font-weight:700;font-size:15px;color:#fff;margin-bottom:6px">No Route Analyzed Yet</div>
-          <div>Upload an RTZ or GPX route in the Import tab and click Execute Route Audit.</div>
+          <div style="font-weight:800;font-size:16px;color:#fff;margin-bottom:6px">Henüz rota denetlenmedi</div>
+          <div><b>Rota Yükle</b> sekmesine geç, ECDIS rotanı seç, <b>ROTAYI DENETLE</b>'ye bas — sonuçlar burada listelenir.</div>
+          <button class="empty-cta" onclick="switchTab('import')">+ Rota Yükle</button>
         </div>
       </div>
 
@@ -447,19 +510,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <nav id="bnav">
     <button class="nav-tab active" id="n-import" onclick="switchTab('import')">
       <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-      <span>IMPORT</span>
+      <span>ROTA YÜKLE</span>
     </button>
     <button class="nav-tab" id="n-convert" onclick="switchTab('convert')">
       <svg viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
-      <span>CONVERT</span>
+      <span>ÇEVİRİCİ</span>
     </button>
     <button class="nav-tab" id="n-map" onclick="switchTab('map')">
       <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
-      <span>MAP</span>
+      <span>HARİTA</span>
     </button>
     <button class="nav-tab" id="n-report" onclick="switchTab('report')">
       <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-      <span>REPORT</span>
+      <span>RAPOR</span>
     </button>
   </nav>
 
@@ -955,7 +1018,7 @@ function renderMarkers() {
     const coords = r.notice.coordinates || [];
     const hex = r.color === 'red' ? '#f43f5e' : '#f59e0b';
     const popupHtml = `
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;min-width:210px">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;min-width:210px">
         <div style="font-size:11px;font-weight:800;color:#0284c7;font-family:monospace">${r.notice.id} [${r.notice.geometry_type}]</div>
         <div style="font-weight:700;font-size:13px;margin:5px 0;color:#0f172a">${r.notice.title}</div>
         <div style="font-size:12px;color:#64748b">CPA to Route: <b style="color:${hex}">${r.distance} NM</b></div>
@@ -1054,8 +1117,8 @@ function filterReport() {
         <div class="empty-icon">
           <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
         </div>
-        <div style="font-weight:700;font-size:15px;color:#fff;margin-bottom:6px">No Route Analyzed Yet</div>
-        <div>Upload an RTZ or GPX route in the Import tab and click Execute Route Audit.</div>
+        <div style="font-weight:800;font-size:16px;color:#fff;margin-bottom:6px">Henüz rota denetlenmedi</div>
+        <div><b>Rota Yükle</b> sekmesine geç, ECDIS rotanı seç, <b>ROTAYI DENETLE</b>’ye bas — sonuçlar burada listelenir.</div>
       </div>
     `;
     return;
@@ -1082,7 +1145,7 @@ function filterReport() {
   }
 
   if (!filtered.length) {
-    listEl.innerHTML = `<div class="empty-box">No notices found matching search criteria.</div>`;
+    listEl.innerHTML = `<div class="empty-box">Aramana uyan duyuru yok — filtreyi gevşet ya da <b>Tümü</b> sekmesine dön.</div>`;
     renderGeneralInfo(); /* E5 */
     return;
   }
@@ -1093,7 +1156,7 @@ function filterReport() {
     return `
       <div class="rpt-item-card" id="card-${idx}">
         <div class="rpt-card-main" onclick="toggleCard(${idx})">
-          <span class="item-tag tag-${r.color}">${r.color === 'red' ? 'XTD Conflict' : 'Caution'}</span>
+          <span class="item-tag tag-${r.color}">${r.color === 'red' ? 'KRİTİK (XTD)' : 'DİKKAT'}</span>
           ${statusBadge(n)}
           <div class="item-id-wrap">
             <div class="item-id">${n.id}</div>
@@ -1162,7 +1225,7 @@ function renderGeneralInfo() {
     });
   }
   if (!gen.length) {
-    listEl.innerHTML = `<div class="empty-box">No general notices found.</div>`;
+    listEl.innerHTML = `<div class="empty-box">Bu filtrede genel duyuru yok.</div>`;
     return;
   }
   listEl.innerHTML = gen.map(n => {
