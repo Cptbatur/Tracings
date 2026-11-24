@@ -47,3 +47,9 @@
 ## Tur özeti (UI TURU)
 - 4 GEÇTİ (sekme, fonksiyon, kritik, id), 0 KALDI, 1 ONAY BEKLENİYOR (U1+U2, ikisi de kozmetik).
 - Kod değişikliği önerisi SADECE U1'dir (tek satır font adı); U2 ölçüm/karar sorusudur.
+
+## EN TURU — 2026-11-25 | GEÇTİ
+- Görünür Türkçe (script/style hariç HTML metni, çğıöşüÇĞİÖŞÜ): 0 — GEÇTİ.
+- JS kullanıcı mesajları (alert/innerHTML/textContent/placeholder/title/aria): 7 stringde 0 Türkçe; attr Türkçe 0 — GEÇTİ.
+- Kalan Türkçe yalnızca kod yorumlarında, kullanıcıya görünmez.
+- İşlev: tab-convert/import/map/report VAR; kritik fonksiyonlar TANIMLI; extract-JS node --check OK — GEÇTİ.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tracings — Köprüüstü T&P Rota Kontrolü</title>
+<title>Tracings — Bridge T&P Route Check</title>
 <meta name="theme-color" content="#060b14">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -337,7 +337,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       </div>
       <span>Tracings</span>
-      <span class="hdr-sub">T&amp;P Rota Kontrolü</span>
+      <span class="hdr-sub">T&amp;P Route Check</span>
     </div>
     <div id="hdr-stats">
       <div id="stat-red" class="stat-pill red" style="display:none">0 Conflict</div>
@@ -349,22 +349,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <!-- CONTENT VIEW -->
   <main id="tab-wrap">
 
-    <!-- TAB 1: ROTA YÜKLE (audit akışı) -->
+    <!-- TAB 1: UPLOAD ROUTE (audit flow) -->
     <section id="tab-import" class="tab active">
       <div class="value-strip">
         <div class="value-main">
-          <b>Rotanı yükle, T&amp;P çakışmasını 10 saniyede gör</b>
-          <span>Admiralty haftalık bültenindeki 3000+ geçici duyuruya karşı rotanı en yakın geçiş mesafesiyle (CPA) denetler.</span>
+          <b>Upload your route, see T&amp;P conflicts in 10 seconds</b>
+          <span>Checks your route against 3000+ temporary notices from the Admiralty weekly bulletin, with closest approach distance (CPA).</span>
         </div>
         <div class="value-steps">
-          <div class="value-step"><i>1</i> Rotayı yükle</div>
-          <div class="value-step"><i>2</i> Kontrolü çalıştır</div>
-          <div class="value-step"><i>3</i> Raporu oku</div>
+          <div class="value-step"><i>1</i> Upload route</div>
+          <div class="value-step"><i>2</i> Run the check</div>
+          <div class="value-step"><i>3</i> Read the report</div>
         </div>
       </div>
       <div class="card">
         <div class="card-title">
-          <span>Elektronik Rota</span>
+          <span>Electronic Route</span>
           <span style="color:var(--primary-light)">RTZ / GPX</span>
         </div>
         <div id="drop-zone">
@@ -372,18 +372,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="dz-circle">
             <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
           </div>
-          <div style="font-weight:800;font-size:15px;color:#fff">Sefer Rotasını Yükle</div>
-          <div class="dz-hint">ECDIS'ten .rtz ya da standart .gpx dosyasına dokun — eldivenle de basılır</div>
+          <div style="font-weight:800;font-size:15px;color:#fff">Upload Voyage Route</div>
+          <div class="dz-hint">Tap your .rtz from ECDIS or a standard .gpx file — glove-friendly</div>
           <div id="file-info" style="margin-top:12px;font-weight:700;color:var(--emerald);font-size:13px"></div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">Emniyet Koridoru ve Limitler</div>
+        <div class="card-title">Safety Corridor &amp; Limits</div>
         <div class="param-row">
           <div>
-            <div class="param-label">Dikkat Arama Koridoru</div>
-            <div class="param-sub">Rota çevresinde taranan uyarı mesafesi (CPA üst sınırı)</div>
+            <div class="param-label">Caution Search Corridor</div>
+            <div class="param-sub">Warning distance scanned around the route (CPA upper limit)</div>
           </div>
           <div class="param-inp-wrap">
             <input type="number" id="inp-safety" value="15" step="0.5">
@@ -392,8 +392,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
         <div class="param-row">
           <div>
-            <div class="param-label">Rota Hattı Limiti (XTD)</div>
-            <div class="param-sub">Bu mesafenin altı kritik çakışma sayılır (kırmızı)</div>
+            <div class="param-label">Track Limit (XTD)</div>
+            <div class="param-sub">Below this distance counts as a critical conflict (red)</div>
           </div>
           <div class="param-inp-wrap">
             <input type="number" id="inp-xtd" value="0.5" step="0.1">
@@ -404,15 +404,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
       <button id="analyze-btn" class="btn-action" disabled onclick="runAnalysis()">
         <svg style="width:18px;height:18px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 14.59L8.71 12.3a1 1 0 111.41-1.42L13 13.76l4.88-4.88a1 1 0 111.41 1.41L13 16.59z"/></svg>
-        <span>ROTAYI DENETLE</span>
+        <span>CHECK ROUTE</span>
       </button>
     </section>
 
-    <!-- TAB 2: FORMAT ÇEVİRİCİ (rota format çevirici) -->
+    <!-- TAB 2: FORMAT CONVERTER -->
     <section id="tab-convert" class="tab">
       <div class="card">
         <div class="card-title">
-          <span>Rota Format Çevirici</span>
+          <span>Route Format Converter</span>
           <span id="conv-fmt" class="fmt-badge" style="display:none"></span>
         </div>
         <div id="conv-drop">
@@ -420,41 +420,41 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="dz-circle" style="background:rgba(52,211,153,0.14)">
             <svg style="fill:var(--emerald)" viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
           </div>
-          <div style="font-weight:800;font-size:15px;color:#fff">Çevrilecek Rotayı Yükle</div>
-          <div class="dz-hint">RTZ · GPX · RT3 · CVT · CSV (FURUNO/JRC/Genel) · RTE (Transas binary)</div>
+          <div style="font-weight:800;font-size:15px;color:#fff">Upload Route to Convert</div>
+          <div class="dz-hint">RTZ · GPX · RT3 · CVT · CSV (FURUNO/JRC/Generic) · RTE (Transas binary)</div>
           <div id="conv-info" style="margin-top:12px;font-weight:700;color:var(--emerald);font-size:13px"></div>
         </div>
       </div>
 
       <div class="card" id="conv-prev-card" style="display:none">
-        <div class="card-title"><span>Önizleme</span><span id="conv-count" class="rpt-count" style="color:var(--emerald)"></span></div>
+        <div class="card-title"><span>Preview</span><span id="conv-count" class="rpt-count" style="color:var(--emerald)"></span></div>
         <div style="max-height:240px;overflow-y:auto">
           <table id="conv-table">
-            <thead><tr><th>#</th><th>İsim</th><th>Enlem</th><th>Boylam</th></tr></thead>
+            <thead><tr><th>#</th><th>Name</th><th>Lat</th><th>Lon</th></tr></thead>
             <tbody id="conv-tbody"></tbody>
           </table>
         </div>
         <div class="conv-btns">
-          <button class="btn-conv btn-rtz" id="dl-rtz" onclick="downloadConv('rtz')" disabled>⬇ RTZ İNDİR</button>
-          <button class="btn-conv btn-gpx" id="dl-gpx" onclick="downloadConv('gpx')" disabled>⬇ GPX İNDİR</button>
-          <button class="btn-conv btn-map" onclick="previewOnMap()">🗺 HARİTADA GÖR</button>
+          <button class="btn-conv btn-rtz" id="dl-rtz" onclick="downloadConv('rtz')" disabled>⬇ DOWNLOAD RTZ</button>
+          <button class="btn-conv btn-gpx" id="dl-gpx" onclick="downloadConv('gpx')" disabled>⬇ DOWNLOAD GPX</button>
+          <button class="btn-conv btn-map" onclick="previewOnMap()">🗺 VIEW ON CHART</button>
         </div>
-        <div style="font-size:11.5px;color:var(--text-muted);margin-top:10px">İç format: ondalık derece WGS84 waypoint dizisi. RTZ = IEC 61174, GPX = GPX 1.1.</div>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-top:10px">Internal format: decimal-degree WGS84 waypoint list. RTZ = IEC 61174, GPX = GPX 1.1.</div>
       </div>
       <div class="card" id="conv-empty" style="display:none">
-        <div class="card-title">Henüz Rota Yok</div>
-        <div style="font-size:13px;color:var(--text-dim)">Eski cihaz çıktını (RT3, CVT, CSV, RTE) yükle — önizlemesi burada belirir, tek dokunuşla ECDIS'in okuduğu RTZ'ye çevrilir.</div>
+        <div class="card-title">No Route Yet</div>
+        <div style="font-size:13px;color:var(--text-dim)">Upload a legacy device export (RT3, CVT, CSV, RTE) — preview appears here, convert to ECDIS-readable RTZ in one tap.</div>
       </div>
     </section>
 
-    <!-- TAB 3: HARİTA -->
+    <!-- TAB 3: CHART -->
     <section id="tab-map" class="tab">
       <div id="map-wrap">
         <div id="lmap"></div>
       </div>
     </section>
 
-    <!-- TAB 4: DENETİM RAPORU -->
+    <!-- TAB 4: AUDIT REPORT -->
     <section id="tab-report" class="tab">
       <div class="print-banner">
         <h1>ADMIRALTY T&P NOTICES TO MARINERS - PASSAGE PLAN AUDIT REPORT</h1>
@@ -464,25 +464,25 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="rpt-top-bar">
         <div class="rpt-search-box">
           <svg class="rpt-search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          <input type="text" id="rpt-filter-input" placeholder="Duyuru no, harita no (örn. 166) ya da anahtar kelime ara…" oninput="filterReport()">
+          <input type="text" id="rpt-filter-input" placeholder="Search notice no., chart no. (e.g. 166) or keyword…" oninput="filterReport()">
         </div>
-        <button class="f-chip active" id="f-all" onclick="setSeverityFilter('ALL')">Tümü</button>
-        <button class="f-chip" id="f-red" onclick="setSeverityFilter('RED')">Kritik (XTD)</button>
-        <button class="f-chip" id="f-amber" onclick="setSeverityFilter('AMBER')">Dikkat</button>
+        <button class="f-chip active" id="f-all" onclick="setSeverityFilter('ALL')">All</button>
+        <button class="f-chip" id="f-red" onclick="setSeverityFilter('RED')">Critical (XTD)</button>
+        <button class="f-chip" id="f-amber" onclick="setSeverityFilter('AMBER')">Caution</button>
         <!-- S6: status filtresi (K2/S1/S3 cevabı + KAPTAN S6 EVET) -->
-        <button class="f-chip active" id="fs-active" onclick="setStatusFilter('ACTIVE')">Yürürlükte</button>
-        <button class="f-chip" id="fs-cancelled" onclick="setStatusFilter('CANCELLED')">İptal</button>
-        <button class="f-chip" id="fs-all" onclick="setStatusFilter('ALL')">Tümü (durum)</button>
+        <button class="f-chip active" id="fs-active" onclick="setStatusFilter('ACTIVE')">Active</button>
+        <button class="f-chip" id="fs-cancelled" onclick="setStatusFilter('CANCELLED')">Cancelled</button>
+        <button class="f-chip" id="fs-all" onclick="setStatusFilter('ALL')">All (status)</button>
         <button class="btn-print" onclick="exportPrintableReport()">
           <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
-          <span>Sefer Raporu Yazdır</span>
+          <span>Print Voyage Report</span>
         </button>
       </div>
 
       <!-- S6 uyarı bloğu: Kaynak S3 cevabı + K7/K8 (ENC uyarısı) + KAPTAN S6 EVET -->
       <div class="rpt-warn-block">
-        <strong>UYARI:</strong> Resmî kaynak ADMIRALTY weekly NM / T&amp;P in-force listesidir; son karar kaptanındır.<br>
-        ENC güncel olması tüm T&amp;P'lerin ECDIS'te olduğu anlamına gelmez.
+        <strong>CAUTION:</strong> Official source: ADMIRALTY weekly NM / T&amp;P in-force list; master's decision is final.<br>
+        An up-to-date ENC does not mean all T&amp;Ps are in the ECDIS.
       </div>
 
       <div id="rpt-list">
@@ -490,16 +490,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="empty-icon">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           </div>
-          <div style="font-weight:800;font-size:16px;color:#fff;margin-bottom:6px">Henüz rota denetlenmedi</div>
-          <div><b>Rota Yükle</b> sekmesine geç, ECDIS rotanı seç, <b>ROTAYI DENETLE</b>'ye bas — sonuçlar burada listelenir.</div>
-          <button class="empty-cta" onclick="switchTab('import')">+ Rota Yükle</button>
+          <div style="font-weight:800;font-size:16px;color:#fff;margin-bottom:6px">No route checked yet</div>
+          <div><b>Upload Route</b> tab, select your ECDIS route, press <b>CHECK ROUTE</b> — results will be listed here.</div>
+          <button class="empty-cta" onclick="switchTab('import')">+ Upload Route</button>
         </div>
       </div>
 
       <!-- E5: GENEL BİLGİ bölümü — koordinatsız kayıtlar, rota analizine dahil değildir (KAPTAN E5 kararı + test-denetim.md E5) -->
       <div class="rpt-gen-block">
-        <div class="rpt-gen-title">GENEL BİLGİ</div>
-        <div>Konumu olmayan genel duyurular — rota analizine dahil değildir.</div>
+        <div class="rpt-gen-title">GENERAL INFORMATION</div>
+        <div>General notices without a position — excluded from route analysis.</div>
         <div id="rpt-gen-list" style="margin-top:10px"><div class="empty-box">Loading general notices…</div></div>
       </div>
     </section>
@@ -510,19 +510,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <nav id="bnav">
     <button class="nav-tab active" id="n-import" onclick="switchTab('import')">
       <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-      <span>ROTA YÜKLE</span>
+      <span>UPLOAD ROUTE</span>
     </button>
     <button class="nav-tab" id="n-convert" onclick="switchTab('convert')">
       <svg viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
-      <span>ÇEVİRİCİ</span>
+      <span>CONVERTER</span>
     </button>
     <button class="nav-tab" id="n-map" onclick="switchTab('map')">
       <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
-      <span>HARİTA</span>
+      <span>CHART</span>
     </button>
     <button class="nav-tab" id="n-report" onclick="switchTab('report')">
       <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-      <span>RAPOR</span>
+      <span>REPORT</span>
     </button>
   </nav>
 
@@ -843,8 +843,8 @@ document.getElementById('conv-inp').addEventListener('change', async e => {
   if (fmt === 'DOCUMENT') {
     document.getElementById('conv-fmt').style.display = '';
     document.getElementById('conv-fmt').className = 'fmt-badge unknown';
-    document.getElementById('conv-fmt').textContent = 'BELGE — ROTA DEĞİL';
-    document.getElementById('conv-info').textContent = '⚠ ' + file.name + ': bu bir rota dosyası değil, Word geçiş-planı belgesi (STAMCO SMS şablonu). Rota olarak çevrilemez — belge olarak saklayın.';
+    document.getElementById('conv-fmt').textContent = 'DOCUMENT — NOT A ROUTE';
+    document.getElementById('conv-info').textContent = '⚠ ' + file.name + ': not a route file — a Word passage-plan document (STAMCO SMS template). Cannot be converted as a route — keep it as a document.';
     document.getElementById('conv-prev-card').style.display = 'none';
     return;
   }
@@ -859,8 +859,8 @@ document.getElementById('conv-inp').addEventListener('change', async e => {
        cihazlar RTZ (IEC 61174) import eder — RTZ dosyasıyla deneyin. */
     document.getElementById('conv-fmt').style.display = '';
     document.getElementById('conv-fmt').className = 'fmt-badge unknown';
-    document.getElementById('conv-fmt').textContent = 'BİNARY — DESTEK DIŞI';
-    document.getElementById('conv-info').textContent = '❌ ' + file.name + ': tanınamayan binary format (JRC/FURUNO/KH/MARIS/Consilium için örnek dosya gerekli — S12). Modern cihazlar RTZ import eder, RTZ ile deneyin.';
+    document.getElementById('conv-fmt').textContent = 'BINARY — UNSUPPORTED';
+    document.getElementById('conv-info').textContent = '❌ ' + file.name + ': unrecognised binary format (a sample file is needed for JRC/FURUNO/KH/MARIS/Consilium). Modern units import RTZ — try an RTZ file.';
     document.getElementById('conv-prev-card').style.display = 'none';
     return;
   } else {
@@ -877,20 +877,20 @@ document.getElementById('conv-inp').addEventListener('change', async e => {
   badge.style.display = '';
   if (wps.length >= 1) {
     badge.className = 'fmt-badge';
-    badge.textContent = det + ' · ' + wps.length + ' WP' + ((parseRTE.skipped && det === 'RTE') ? ' (' + parseRTE.skipped + ' kayıt atlandı)' : '');
-    document.getElementById('conv-info').textContent = `✓ ${file.name} tanındı (${det}, ${wps.length} waypoint)`;
+    badge.textContent = det + ' · ' + wps.length + ' WP' + ((parseRTE.skipped && det === 'RTE') ? ' (' + parseRTE.skipped + ' record(s) skipped)' : '');
+    document.getElementById('conv-info').textContent = `✓ ${file.name} recognised (${det}, ${wps.length} waypoints)`;
     const tb = document.getElementById('conv-tbody');
     tb.innerHTML = wps.map((w, i) =>
       '<tr><td>' + (i + 1) + '</td><td>' + escXml(w.name || ('WP' + (i + 1))) + '</td><td>' +
       w.lat.toFixed(5) + '</td><td>' + w.lon.toFixed(5) + '</td></tr>').join('');
-    document.getElementById('conv-count').textContent = wps.length + ' waypoint';
+    document.getElementById('conv-count').textContent = wps.length + ' waypoints';
     document.getElementById('conv-prev-card').style.display = '';
     document.getElementById('dl-rtz').disabled = wps.length < 2;
     document.getElementById('dl-gpx').disabled = wps.length < 2;
   } else {
     badge.className = 'fmt-badge unknown';
-    badge.textContent = 'TANINAMADI';
-    document.getElementById('conv-info').textContent = `❌ ${file.name}: waypoint okunamadı. Örnek dosya gerekli.`;
+    badge.textContent = 'NOT RECOGNISED';
+    document.getElementById('conv-info').textContent = `❌ ${file.name}: no waypoints read. Sample file required.`;
     document.getElementById('conv-prev-card').style.display = 'none';
   }
 });
@@ -1092,12 +1092,12 @@ function setStatusFilter(st) {
 function sourceLine(n) {
   const st = n.status || 'active';
   if (st === 'cancelled') {
-    return `<div class="src-line">İptal: ${escapeHtml(n.cancelled_by || 'bilinmiyor')}</div>`;
+    return `<div class="src-line">Cancelled: ${escapeHtml(n.cancelled_by || 'unknown')}</div>`;
   }
   if (n.cancelled_by || (n.cancels && n.cancels.length)) {
-    return `<div class="src-line">Kaynak: ${escapeHtml(n.cancelled_by || n.cancels.join(', '))}</div>`;
+    return `<div class="src-line">Source: ${escapeHtml(n.cancelled_by || n.cancels.join(', '))}</div>`;
   }
-  return `<div class="src-line unverified">DOĞRULANMADI - kaptana danış</div>`;
+  return `<div class="src-line unverified">UNVERIFIED — consult the master</div>`;
 }
 
 function statusBadge(n) {
@@ -1117,8 +1117,8 @@ function filterReport() {
         <div class="empty-icon">
           <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
         </div>
-        <div style="font-weight:800;font-size:16px;color:#fff;margin-bottom:6px">Henüz rota denetlenmedi</div>
-        <div><b>Rota Yükle</b> sekmesine geç, ECDIS rotanı seç, <b>ROTAYI DENETLE</b>’ye bas — sonuçlar burada listelenir.</div>
+        <div style="font-weight:800;font-size:16px;color:#fff;margin-bottom:6px">No route checked yet</div>
+        <div><b>Upload Route</b> tab, select your ECDIS route, press <b>CHECK ROUTE</b> — results will be listed here.</div>
       </div>
     `;
     return;
@@ -1145,7 +1145,7 @@ function filterReport() {
   }
 
   if (!filtered.length) {
-    listEl.innerHTML = `<div class="empty-box">Aramana uyan duyuru yok — filtreyi gevşet ya da <b>Tümü</b> sekmesine dön.</div>`;
+    listEl.innerHTML = `<div class="empty-box">No notices match your search — loosen the filter or go back to <b>All</b>.</div>`;
     renderGeneralInfo(); /* E5 */
     return;
   }
@@ -1156,7 +1156,7 @@ function filterReport() {
     return `
       <div class="rpt-item-card" id="card-${idx}">
         <div class="rpt-card-main" onclick="toggleCard(${idx})">
-          <span class="item-tag tag-${r.color}">${r.color === 'red' ? 'KRİTİK (XTD)' : 'DİKKAT'}</span>
+          <span class="item-tag tag-${r.color}">${r.color === 'red' ? 'CRITICAL (XTD)' : 'CAUTION'}</span>
           ${statusBadge(n)}
           <div class="item-id-wrap">
             <div class="item-id">${n.id}</div>
@@ -1225,13 +1225,13 @@ function renderGeneralInfo() {
     });
   }
   if (!gen.length) {
-    listEl.innerHTML = `<div class="empty-box">Bu filtrede genel duyuru yok.</div>`;
+    listEl.innerHTML = `<div class="empty-box">No general notices under this filter.</div>`;
     return;
   }
   listEl.innerHTML = gen.map(n => {
     const tp = (n.type === 'T' || n.type === 'P') ? `(${n.type})` : '';
     const subj = n.subject || n.title || n.id;
-    const cancel = n.cancelled_by ? `<div class="src-line">İptal: ${escapeHtml(n.cancelled_by)}</div>` : '';
+    const cancel = n.cancelled_by ? `<div class="src-line">Cancelled: ${escapeHtml(n.cancelled_by)}</div>` : '';
     return `
       <div class="rpt-item-card" id="gen-${escapeHtml(n.id)}">
         <div class="rpt-card-main" onclick="this.parentElement.classList.toggle('open')">
