@@ -79,6 +79,39 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 }
 .dz-circle svg{width:26px;height:26px;fill:var(--primary-light)}
 
+/* CONVERT TAB */
+#conv-drop{
+  border:2px dashed rgba(16,185,129,0.3);border-radius:14px;padding:28px 20px;
+  text-align:center;cursor:pointer;position:relative;background:var(--inner);
+  transition:all 0.25s ease;
+}
+#conv-drop:hover{border-color:var(--emerald);background:rgba(16,185,129,0.05)}
+#conv-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.fmt-badge{
+  display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;
+  padding:4px 12px;border-radius:20px;background:rgba(16,185,129,0.15);
+  color:var(--emerald);border:1px solid rgba(16,185,129,0.35);
+}
+.fmt-badge.unknown{background:rgba(245,158,11,0.12);color:var(--amber);border-color:rgba(245,158,11,0.35)}
+#conv-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+#conv-table th{
+  text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;
+  color:var(--text-muted);padding:8px;border-bottom:1px solid var(--card-border);
+  font-family:'JetBrains Mono',monospace;
+}
+#conv-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:'JetBrains Mono',monospace}
+#conv-table tr:hover td{background:rgba(2,132,199,0.06)}
+.conv-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.btn-conv{
+  flex:1;min-width:140px;padding:13px;border:none;border-radius:12px;cursor:pointer;
+  font-weight:800;font-size:13px;color:#fff;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-conv:disabled{opacity:0.35;cursor:not-allowed}
+.btn-rtz{background:linear-gradient(135deg,#0284c7,#0369a1);box-shadow:0 4px 16px rgba(2,132,199,0.35)}
+.btn-gpx{background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 16px rgba(16,185,129,0.35)}
+.btn-map{background:linear-gradient(135deg,#8b5cf6,#7c3aed);box-shadow:0 4px 16px rgba(139,92,246,0.35)}
+
 /* PARAMS */
 .param-row{
   display:flex;justify-content:space-between;align-items:center;padding:12px 0;
@@ -153,6 +186,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .rpt-warn-block{background:rgba(245,158,11,0.08);border:1px solid var(--amber-border);border-radius:12px;
   padding:12px 16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:var(--text-dim)}
 .rpt-warn-block strong{color:var(--amber)}
+/* E5: GENEL BİLGİ bölümü (KAPTAN E5 kararı + test-denetim.md E5; analiz dışı, sadece teşhir) */
+.rpt-gen-block{background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.35);border-radius:12px;
+  padding:12px 16px;margin-top:16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:var(--text-dim)}
+.rpt-gen-block strong{color:#93c5fd}
+.rpt-gen-title{font-size:14px;font-weight:800;color:#93c5fd;letter-spacing:0.06em;margin-bottom:4px}
 .src-line{font-size:11px;color:var(--text-muted);margin-top:6px;font-family:'JetBrains Mono',monospace}
 .src-line.unverified{color:var(--amber);font-weight:700}
 
@@ -312,7 +350,42 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </button>
     </section>
 
-    <!-- TAB 2: MAP -->
+    <!-- TAB 2: CONVERT (rota format çevirici) -->
+    <section id="tab-convert" class="tab">
+      <div class="card">
+        <div class="card-title">
+          <span>Rota Format Çevirici</span>
+          <span id="conv-fmt" class="fmt-badge" style="display:none"></span>
+        </div>
+        <div id="conv-drop">
+          <input type="file" id="conv-inp" accept=".rtz,.gpx,.rt3,.cvt,.csv,.txt,.rte,.fev,.jan,.rkz,.csv">
+          <div class="dz-circle" style="background:rgba(16,185,129,0.12)">
+            <svg style="fill:var(--emerald)" viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
+          </div>
+          <div style="font-weight:800;font-size:15px;color:#fff">Çevrilecek Rotayı Yükle</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">RTZ · GPX · RT3 · CVT · CSV (FURUNO/JRC/Genel) · RTE (Transas binary)</div>
+          <div id="conv-info" style="margin-top:12px;font-weight:700;color:var(--emerald);font-size:13px"></div>
+        </div>
+      </div>
+
+      <div class="card" id="conv-prev-card" style="display:none">
+        <div class="card-title"><span>Önizleme</span><span id="conv-count" style="color:var(--emerald)"></span></div>
+        <div style="max-height:240px;overflow-y:auto">
+          <table id="conv-table">
+            <thead><tr><th>#</th><th>İsim</th><th>Enlem</th><th>Boylam</th></tr></thead>
+            <tbody id="conv-tbody"></tbody>
+          </table>
+        </div>
+        <div class="conv-btns">
+          <button class="btn-conv btn-rtz" id="dl-rtz" onclick="downloadConv('rtz')" disabled>⬇ RTZ İNDİR</button>
+          <button class="btn-conv btn-gpx" id="dl-gpx" onclick="downloadConv('gpx')" disabled>⬇ GPX İNDİR</button>
+          <button class="btn-conv btn-map" onclick="previewOnMap()">🗺 HARİTADA GÖR</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:10px">İç format: ondalık derece WGS84 waypoint dizisi. RTZ = IEC 61174, GPX = GPX 1.1.</div>
+      </div>
+    </section>
+
+    <!-- TAB 3: MAP -->
     <section id="tab-map" class="tab">
       <div id="map-wrap">
         <div id="lmap"></div>
@@ -359,6 +432,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div>Upload an RTZ or GPX route in the Import tab and click Execute Route Audit.</div>
         </div>
       </div>
+
+      <!-- E5: GENEL BİLGİ bölümü — koordinatsız kayıtlar, rota analizine dahil değildir (KAPTAN E5 kararı + test-denetim.md E5) -->
+      <div class="rpt-gen-block">
+        <div class="rpt-gen-title">GENEL BİLGİ</div>
+        <div>Konumu olmayan genel duyurular — rota analizine dahil değildir.</div>
+        <div id="rpt-gen-list" style="margin-top:10px"><div class="empty-box">Loading general notices…</div></div>
+      </div>
     </section>
 
   </main>
@@ -368,6 +448,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <button class="nav-tab active" id="n-import" onclick="switchTab('import')">
       <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
       <span>IMPORT</span>
+    </button>
+    <button class="nav-tab" id="n-convert" onclick="switchTab('convert')">
+      <svg viewBox="0 0 24 24"><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg>
+      <span>CONVERT</span>
     </button>
     <button class="nav-tab" id="n-map" onclick="switchTab('map')">
       <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
@@ -427,17 +511,166 @@ async function fetchStatusAndData() {
     const nc = S.tpRaw.filter(n => n.status === 'cancelled').length;
     document.getElementById('stat-notices').textContent =
       na.toLocaleString() + ' Active / ' + nc.toLocaleString() + ' Cancelled';
+    /* E5: GENEL BİLGİ bölümünü doldur (KAPTAN E5 kararı + test-denetim.md E5; analiz/harita akışına dokunmaz) */
+    renderGeneralInfo();
   } catch (e) {
     document.getElementById('stat-notices').textContent = 'Database Offline';
   }
 }
 
-/* ==================== PARSERS ==================== */
-function parseRoute(txt, filename) {
-  if (filename.toLowerCase().endsWith('.gpx') || txt.includes('<gpx')) {
-    return parseGPX(txt);
+/* ==================== PARSERS (audit + convert ortak) ==================== */
+/* İç format: [{name, lat, lon}] — ondalık derece WGS84. Kaynak: ROUTES/ örnekleri. */
+function detectRouteFormat(txt, filename, buf) {
+  const fn = (filename || '').toLowerCase();
+  /* OLE (MS Compound File) magic: D0 CF 11 E0 A1 B1 1A E1 → DOCUMENT (rota değil).
+     Kaynak: sorular-cevaplar.md S12 cevabı — 25 OLE dosya STAMCO SMS Word geçiş-planı
+     şablonu; Kaptan kararı (2): BELGE sayılır. */
+  if (buf && buf.byteLength >= 8) {
+    const mg = new Uint8Array(buf, 0, 8);
+    if (mg[0] === 0xD0 && mg[1] === 0xCF && mg[2] === 0x11 && mg[3] === 0xE0 &&
+        mg[4] === 0xA1 && mg[5] === 0xB1 && mg[6] === 0x1A && mg[7] === 0xE1) return 'DOCUMENT';
   }
-  return parseRTZ(txt);
+  const head = (txt || '').slice(0, 2000);
+  if (fn.endsWith('.rtz') || head.includes('<Route') || head.includes('route:RouteInformation')) return 'RTZ';
+  if (fn.endsWith('.gpx') || head.includes('<gpx')) return 'GPX';
+  if (fn.endsWith('.rt3') || head.includes('<TSH_Route')) return 'RT3';
+  if (fn.endsWith('.cvt') || head.includes('C:\\Transas') || head.includes('XTE=')) return 'CVT';
+  /* RTE: Transas Navi-Sailor binary (uzantı .rte + int16 LE header tutarlılığı).
+     Kaynak: sorular-cevaplar.md S12 cevabı (Brh-Fred RT3/RTE çifti çapraz doğrulama). */
+  if (fn.endsWith('.rte')) {
+    if (buf && buf.byteLength >= 2) {
+      const n = new DataView(buf).getInt16(0, true);
+      if (!(n > 0 && n <= 10000)) return 'BILINMIYOR';
+    }
+    return 'RTE';
+  }
+  if (head.includes('$') && (head.includes('WPL') || head.includes('RTE'))) return 'NMEA';
+  if (/\bLat\b.*\bLon\b/i.test(head.slice(0, 800)) && /[0-9]/.test(head)) return 'CSV';
+  return 'BILINMIYOR';
+}
+
+function parseRoute(txt, filename) {
+  const fmt = detectRouteFormat(txt, filename);
+  if (fmt === 'GPX') return parseGPX(txt);
+  if (fmt === 'RT3') return parseRT3(txt);
+  if (fmt === 'CVT') return parseCVT(txt);
+  if (fmt === 'CSV' || fmt === 'NMEA') return parseCSV(txt);
+  return parseRTZ(txt); /* varsayılan: RTZ (IEC 61174); hatalıysa [] döner */
+}
+
+function parseRT3(txt) {
+  /* Kaynak: ROUTES/ROUTE/*.RT3 (Transas/Navi-Sailor, ~2545 dosya). Yapı: XML-benzeri,
+     <WayPoint WPName=".." Lat="DMM" Lon="DMM"/>; Lat/Lon DERECE+ONDALIKDAKİKA
+     (örn. Singapore: Lat="77.15" Lat 1°17.15'N → /60; AVL: Lat="3214.483" → 32°14.483'). */
+  const wps = [];
+  const re = /<WayPoint\b[^>]*>/gi;
+  let m;
+  while ((m = re.exec(txt)) !== null) {
+    const tag = m[0];
+    const nm = /WPName="([^"]*)"/i.exec(tag);
+    const la = /Lat="([^"]*)"/i.exec(tag);
+    const lo = /Lon="([^"]*)"/i.exec(tag);
+    const lat = la ? parseFloat(la[1]) / 60 : NaN;
+    const lon = lo ? parseFloat(lo[1]) / 60 : NaN;
+    if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180)
+      wps.push({ name: nm ? nm[1] : '', lat, lon });
+  }
+  return wps;
+}
+
+function parseRTE(buf) {
+  /* Kaynak: sorular-cevaplar.md S12 cevabı (ROUTES/TAIPAN/ECDIS üzerinde hex analizi;
+     Brh-Fred.RT3/RTE çifti çapraz doğrulama: 17 WP float32 lat/lon birebir aynı).
+     Yapı: int16 LE WP sayısı + kayıt başına [float32 LE lat DMM + float32 LE lon DMM
+     + u32 0 + float32 XTE + u32 0 + u16 BE isim-uzunluğu + ASCII isim]. DMM/60 → ondalık.
+     Sak-Nag varyantı (z2!=0): kayıt atlanır+sayılır, çökme yok. Kabul: Brh-Fred 17 WP,
+     STHM-TLB 8 WP (RT3 ile birebir). */
+  const wps = []; let skipped = 0;
+  try {
+    const dv = buf instanceof DataView ? buf : new DataView(buf);
+    const n = dv.getInt16(0, true);
+    if (!(n > 0 && n <= 10000)) return wps;
+    let o = 2;
+    const dec = new TextDecoder('ascii');
+    for (let i = 0; i < n; i++) {
+      if (o + 22 > dv.byteLength) break;
+      const lat = dv.getFloat32(o, true), lon = dv.getFloat32(o + 4, true);
+      const z2 = dv.getUint32(o + 16, true);
+      const nl = dv.getUint16(o + 20, false);
+      if (nl > 64 || o + 22 + nl > dv.byteLength) { skipped++; break; }
+      if (z2 !== 0) { skipped++; o += 22 + nl; continue; } /* Sak-Nag varyantı */
+      const nm = dec.decode(new Uint8Array(dv.buffer, dv.byteOffset + o + 22, nl));
+      const la = lat / 60, lo = lon / 60;
+      if (!isNaN(la) && !isNaN(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180)
+        wps.push({ name: nm, lat: la, lon: lo });
+      o += 22 + nl;
+    }
+  } catch (e) { /* bozuk kayıt → kısmi sonuç */ }
+  parseRTE.skipped = skipped;
+  return wps;
+}
+
+function parseDMM(s) {
+  /* "9°22.900024N" / "79°55.140137W" (CVT derece işareti 0xB0/0xF8 olabilir) → ondalık derece */
+  const m = /(\d+)\s*[°\u00b0\u00f8]?\s*([\d.]+)\s*([NSEW])/i.exec(s || '');
+  if (!m) return NaN;
+  let v = parseFloat(m[1]) + parseFloat(m[2]) / 60;
+  if (/[SW]/i.test(m[3])) v = -v;
+  return v;
+}
+
+function parseCVT(txt) {
+  /* Kaynak: ROUTES/TAIPAN/*.CVT (Sperry/Transas text export, ~631 dosya). Yapı:
+     "WP nnn Name <ad>" + "Lat <DMM> Lon <DMM>" satırları. DMM parse edilir. */
+  const wps = [];
+  const lines = txt.split(/\r?\n/);
+  let curName = '';
+  for (const ln of lines) {
+    const w = /^WP\s+\d+\s+Name\s*(.*)/i.exec(ln.trim());
+    if (w) { curName = (w[1] || '').trim(); continue; }
+    const c = /\bLat\s+(.+?)\s+Lon\s+(.+)/i.exec(ln);
+    if (c) {
+      const lat = parseDMM(c[1]), lon = parseDMM(c[2]);
+      if (!isNaN(lat) && !isNaN(lon)) wps.push({ name: curName, lat, lon });
+      curName = '';
+    }
+  }
+  return wps;
+}
+
+function parseCSV(txt) {
+  /* Genel CSV: FURUNO FEV/CSV, JRC CSV, GENERIC — lat/lon kolonları ada göre bulunur;
+     NMEA WPL ($..WPL,4917.24,N,00230.50,W,ad) satırları da kabul edilir.
+     Kaynak: saha formatları, ROUTES'ta örnek yok — ilk gerçek dosyada doğrulanacak. */
+  const wps = [];
+  const lines = txt.split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return wps;
+  const wpl = /^\s*\$..WPL,([\d.]+),([NS]),([\d.]+),([EW]),([^,*]*)/;
+  let nmeaHit = false;
+  for (const ln of lines) {
+    const m = wpl.exec(ln.trim());
+    if (m) {
+      nmeaHit = true;
+      const la = parseFloat(m[1]), lo = parseFloat(m[3]);
+      const lat = Math.floor(la / 100) + (la % 100) / 60;
+      const lon = Math.floor(lo / 100) + (lo % 100) / 60;
+      wps.push({ name: (m[5] || '').replace(/\*..$/, ''), lat: m[2] === 'S' ? -lat : lat, lon: m[4] === 'W' ? -lon : lon });
+    }
+  }
+  if (nmeaHit) return wps.filter(w => Math.abs(w.lat) <= 90 && Math.abs(w.lon) <= 180);
+  const head = lines[0].split(/[,;\t]/).map(h => h.trim().toLowerCase());
+  const li = head.findIndex(h => /^(lat|latitude|enlem)$/.test(h));
+  const oi = head.findIndex(h => /^(lon|lng|long|longitude|boylam)$/.test(h));
+  const ni = head.findIndex(h => /^(name|wpt|wp|isim|waypoint)$/.test(h));
+  if (li < 0 || oi < 0) return wps; /* lat/lon kolonu yoksa boş */
+  for (let i = 1; i < lines.length; i++) {
+    const c = lines[i].split(/[,;\t]/);
+    const lat = parseFloat((c[li] || '').replace(',', '.'));
+    const lon = parseFloat((c[oi] || '').replace(',', '.'));
+    if (!isNaN(lat) && !isNaN(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180)
+      wps.push({ name: ni >= 0 ? (c[ni] || '').trim() : '', lat, lon });
+  }
+  return wps;
 }
 
 function parseRTZ(txt) {
@@ -473,15 +706,129 @@ function parseGPX(txt) {
 document.getElementById('file-inp').addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
-  const txt = await file.text();
-  S.waypoints = parseRoute(txt, file.name);
-
+  const ab = await file.arrayBuffer();
+  const afmt = detectRouteFormat('', file.name, ab);
+  if (afmt === 'DOCUMENT') {
+    document.getElementById('file-info').textContent = `⚠ ${file.name} is a Word passage-plan document, not a route — open it in Word, or convert the RT3 twin in the Convert tab.`;
+    document.getElementById('analyze-btn').disabled = true;
+    return;
+  }
+  S.waypoints = afmt === 'RTE' ? parseRTE(ab)
+    : parseRoute(new TextDecoder(afmt === 'CVT' ? 'windows-1252' : 'utf-8').decode(ab), file.name);
   if (S.waypoints.length >= 2) {
     document.getElementById('analyze-btn').disabled = false;
     document.getElementById('file-info').textContent = `✓ ${file.name} ready (${S.waypoints.length} Waypoints)`;
   } else {
     document.getElementById('file-info').textContent = `❌ Unable to read waypoints from ${file.name}`;
     document.getElementById('analyze-btn').disabled = true;
+  }
+});
+
+/* ==================== CONVERT TAB (yükle → tanı → önizle → indir) ==================== */
+const C = { wps: [], name: '', fmt: '' };
+
+function escXml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function buildRTZ(wps, name) {
+  /* IEC 61174 RTZ: <route><waypoints><waypoint id><position lat lon/>… */
+  let s = '<?xml version="1.0" encoding="UTF-8"?>\n<route xmlns="http://www.cirm.org/RTZ/1/1" version="1.1">\n';
+  s += '  <routeInfo routeName="' + escXml(name || 'Converted') + '"/>\n  <waypoints>\n';
+  wps.forEach((w, i) => {
+    s += '    <waypoint id="' + (i + 1) + '"' + (w.name ? ' name="' + escXml(w.name) + '"' : '') + '>\n';
+    s += '      <position lat="' + w.lat.toFixed(6) + '" lon="' + w.lon.toFixed(6) + '"/>\n    </waypoint>\n';
+  });
+  return s + '  </waypoints>\n</route>\n';
+}
+
+function buildGPX(wps, name) {
+  let s = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="TPCheck-Convert" xmlns="http://www.topografix.com/GPX/1/1">\n';
+  s += '  <rte><name>' + escXml(name || 'Converted') + '</name>\n';
+  wps.forEach(w => {
+    s += '    <rtept lat="' + w.lat.toFixed(6) + '" lon="' + w.lon.toFixed(6) + '">'
+       + (w.name ? '<name>' + escXml(w.name) + '</name>' : '') + '</rtept>\n';
+  });
+  return s + '  </rte>\n</gpx>\n';
+}
+
+function downloadConv(kind) {
+  if (C.wps.length < 2) return;
+  const base = (C.name || 'route').replace(/\.[^.]+$/, '');
+  const content = kind === 'rtz' ? buildRTZ(C.wps, base) : buildGPX(C.wps, base);
+  const blob = new Blob([content], { type: 'application/xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = base + '.' + kind;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function previewOnMap() {
+  if (C.wps.length < 2) return;
+  S.waypoints = C.wps.map(w => ({ lat: w.lat, lon: w.lon })); /* audit iç formatı */
+  switchTab('map');
+  if (S.mapReady) renderRoute();
+}
+
+document.getElementById('conv-inp').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const ab = await file.arrayBuffer();
+  const fmt = detectRouteFormat('', file.name, ab);
+  let wps = [], det = fmt;
+  /* DOCUMENT (OLE/Word geçiş-planı belgesi): parse deneme, uyar + dur.
+     Kaynak: S12 cevabı + Kaptan kararı (2) — belge olarak saklanır. */
+  if (fmt === 'DOCUMENT') {
+    document.getElementById('conv-fmt').style.display = '';
+    document.getElementById('conv-fmt').className = 'fmt-badge unknown';
+    document.getElementById('conv-fmt').textContent = 'BELGE — ROTA DEĞİL';
+    document.getElementById('conv-info').textContent = '⚠ ' + file.name + ': bu bir rota dosyası değil, Word geçiş-planı belgesi (STAMCO SMS şablonu). Rota olarak çevrilemez — belge olarak saklayın.';
+    document.getElementById('conv-prev-card').style.display = 'none';
+    return;
+  }
+  if (fmt === 'RTE') {
+    /* Kaynak: S12 cevabı — Transas Navi-Sailor binary, RT3'ün kardeşi. */
+    wps = parseRTE(ab);
+    const sk = parseRTE.skipped || 0;
+    C.wps = wps; C.name = file.name; C.fmt = 'RTE';
+  } else if (fmt === 'BILINMIYOR') {
+    /* Örnek bulunamadı: JRC JAN-901/920, FURUNO FEV, Kelvin Hughes, MARIS, Consilium
+       için ROUTES'ta örnek + herkese açık spec yok (S12 cevabı). Modern JRC/FURUNO
+       cihazlar RTZ (IEC 61174) import eder — RTZ dosyasıyla deneyin. */
+    document.getElementById('conv-fmt').style.display = '';
+    document.getElementById('conv-fmt').className = 'fmt-badge unknown';
+    document.getElementById('conv-fmt').textContent = 'BİNARY — DESTEK DIŞI';
+    document.getElementById('conv-info').textContent = '❌ ' + file.name + ': tanınamayan binary format (JRC/FURUNO/KH/MARIS/Consilium için örnek dosya gerekli — S12). Modern cihazlar RTZ import eder, RTZ ile deneyin.';
+    document.getElementById('conv-prev-card').style.display = 'none';
+    return;
+  } else {
+  const txt = (fmt === 'CVT' || file.name.toLowerCase().endsWith('.cvt'))
+    /* Kaynak: denetçi devir bulgusu 2026-11-24 — CVT Latin-1/Win-1252 (0xF8 derece);
+       file.text() UTF-8 okuyunca U+FFFD olur, parseDMM dakikayı derece sanır. */
+    ? new TextDecoder('windows-1252').decode(ab)
+    : new TextDecoder('utf-8').decode(ab);
+  det = detectRouteFormat(txt, file.name);
+  wps = parseRoute(txt, file.name);
+  C.wps = wps; C.name = file.name; C.fmt = det;
+  }
+  const badge = document.getElementById('conv-fmt');
+  badge.style.display = '';
+  if (wps.length >= 1) {
+    badge.className = 'fmt-badge';
+    badge.textContent = det + ' · ' + wps.length + ' WP' + ((parseRTE.skipped && det === 'RTE') ? ' (' + parseRTE.skipped + ' kayıt atlandı)' : '');
+    document.getElementById('conv-info').textContent = `✓ ${file.name} tanındı (${det}, ${wps.length} waypoint)`;
+    const tb = document.getElementById('conv-tbody');
+    tb.innerHTML = wps.map((w, i) =>
+      '<tr><td>' + (i + 1) + '</td><td>' + escXml(w.name || ('WP' + (i + 1))) + '</td><td>' +
+      w.lat.toFixed(5) + '</td><td>' + w.lon.toFixed(5) + '</td></tr>').join('');
+    document.getElementById('conv-count').textContent = wps.length + ' waypoint';
+    document.getElementById('conv-prev-card').style.display = '';
+    document.getElementById('dl-rtz').disabled = wps.length < 2;
+    document.getElementById('dl-gpx').disabled = wps.length < 2;
+  } else {
+    badge.className = 'fmt-badge unknown';
+    badge.textContent = 'TANINAMADI';
+    document.getElementById('conv-info').textContent = `❌ ${file.name}: waypoint okunamadı. Örnek dosya gerekli.`;
+    document.getElementById('conv-prev-card').style.display = 'none';
   }
 });
 
@@ -665,6 +1012,7 @@ function setSeverityFilter(sev) {
   document.getElementById('f-red').classList.toggle('active', sev === 'RED');
   document.getElementById('f-amber').classList.toggle('active', sev === 'AMBER');
   filterReport();
+  renderGeneralInfo(); /* E5: GENEL BİLGİ aramayla senkron */
 }
 
 /* S6: status filtresi (all/active/cancelled). Kaynak: S3 cevabı + KAPTAN S6 EVET. */
@@ -674,6 +1022,7 @@ function setStatusFilter(st) {
   document.getElementById('fs-cancelled').classList.toggle('active', st === 'CANCELLED');
   document.getElementById('fs-all').classList.toggle('active', st === 'ALL');
   filterReport();
+  renderGeneralInfo(); /* E5: GENEL BİLGİ status filtresiyle senkron */
 }
 
 /* S6: kaynak satırı + status rozeti. Kaynak: S3 (kaynak satırı, DOĞRULANMADI ibaresi) + K2/S1 (iptal). */
@@ -699,6 +1048,7 @@ function filterReport() {
   const listEl = document.getElementById('rpt-list');
 
   if (!S.results || !S.results.length) {
+    renderGeneralInfo(); /* E5: GENEL BİLGİ rota analizinden bağımsız, her zaman görünür */
     listEl.innerHTML = `
       <div class="empty-box">
         <div class="empty-icon">
@@ -733,6 +1083,7 @@ function filterReport() {
 
   if (!filtered.length) {
     listEl.innerHTML = `<div class="empty-box">No notices found matching search criteria.</div>`;
+    renderGeneralInfo(); /* E5 */
     return;
   }
 
@@ -792,6 +1143,51 @@ function filterReport() {
 function toggleCard(idx) {
   const card = document.getElementById('card-' + idx);
   if (card) card.classList.toggle('open');
+}
+
+/* E5: GENEL BİLGİ — has_coordinates=false kayıtlarını birebir teşhir eder.
+   Kaynak: KAPTAN E5 kararı + test-denetim.md E5. Analiz/harita akışına girmez. */
+function renderGeneralInfo() {
+  const listEl = document.getElementById('rpt-gen-list');
+  if (!listEl) return;
+  let gen = (S.tpRaw || []).filter(n => !n.has_coordinates);
+  if (S.statusFilter === 'ACTIVE') gen = gen.filter(n => (n.status || 'active') === 'active');
+  if (S.statusFilter === 'CANCELLED') gen = gen.filter(n => n.status === 'cancelled');
+  const query = (document.getElementById('rpt-filter-input').value || '').toLowerCase().trim();
+  if (query) {
+    gen = gen.filter(n => {
+      return (n.id || '').toLowerCase().includes(query)
+        || (n.title || '').toLowerCase().includes(query)
+        || (n.text || '').toLowerCase().includes(query);
+    });
+  }
+  if (!gen.length) {
+    listEl.innerHTML = `<div class="empty-box">No general notices found.</div>`;
+    return;
+  }
+  listEl.innerHTML = gen.map(n => {
+    const tp = (n.type === 'T' || n.type === 'P') ? `(${n.type})` : '';
+    const subj = n.subject || n.title || n.id;
+    const cancel = n.cancelled_by ? `<div class="src-line">İptal: ${escapeHtml(n.cancelled_by)}</div>` : '';
+    return `
+      <div class="rpt-item-card" id="gen-${escapeHtml(n.id)}">
+        <div class="rpt-card-main" onclick="this.parentElement.classList.toggle('open')">
+          <span class="item-tag tag-grey">${escapeHtml(tp || 'INFO')}</span>
+          ${statusBadge(n)}
+          <div class="item-id-wrap">
+            <div class="item-id">${escapeHtml(n.id)}</div>
+          </div>
+          <div class="item-center">
+            <div class="item-title">${escapeHtml(subj)}</div>
+          </div>
+        </div>
+        <div class="rpt-card-expanded">
+          <div class="raw-text-panel">${escapeHtml(n.text || 'No text available')}</div>
+          ${cancel}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function locateOnMap(idx) {
