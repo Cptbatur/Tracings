@@ -146,6 +146,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 }
 .tag-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
 .tag-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+/* S6: status rozetleri (K2/S1/S3+S6 kaptan onayı) */
+.tag-green{background:var(--emerald-bg);color:var(--emerald);border:1px solid rgba(16,185,129,0.35)}
+.tag-grey{background:rgba(148,163,184,0.12);color:#94a3b8;border:1px solid rgba(148,163,184,0.35)}
+/* S6: sabit uyarı bloğu */
+.rpt-warn-block{background:rgba(245,158,11,0.08);border:1px solid var(--amber-border);border-radius:12px;
+  padding:12px 16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:var(--text-dim)}
+.rpt-warn-block strong{color:var(--amber)}
+.src-line{font-size:11px;color:var(--text-muted);margin-top:6px;font-family:'JetBrains Mono',monospace}
+.src-line.unverified{color:var(--amber);font-weight:700}
 
 .item-id-wrap{min-width:110px}
 .item-id{font-size:14px;font-weight:800;color:var(--primary-light);font-family:'JetBrains Mono',monospace}
@@ -325,10 +334,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <button class="f-chip active" id="f-all" onclick="setSeverityFilter('ALL')">All Notices</button>
         <button class="f-chip" id="f-red" onclick="setSeverityFilter('RED')">Critical (XTD)</button>
         <button class="f-chip" id="f-amber" onclick="setSeverityFilter('AMBER')">Caution</button>
+        <!-- S6: status filtresi (K2/S1/S3 cevabı + KAPTAN S6 EVET) -->
+        <button class="f-chip active" id="fs-active" onclick="setStatusFilter('ACTIVE')">Active</button>
+        <button class="f-chip" id="fs-cancelled" onclick="setStatusFilter('CANCELLED')">Cancelled</button>
+        <button class="f-chip" id="fs-all" onclick="setStatusFilter('ALL')">All Status</button>
         <button class="btn-print" onclick="exportPrintableReport()">
           <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
           <span>Export Passage Plan</span>
         </button>
+      </div>
+
+      <!-- S6 uyarı bloğu: Kaynak S3 cevabı + K7/K8 (ENC uyarısı) + KAPTAN S6 EVET -->
+      <div class="rpt-warn-block">
+        <strong>UYARI:</strong> Resmî kaynak ADMIRALTY weekly NM / T&amp;P in-force listesidir; son karar kaptanındır.<br>
+        ENC güncel olması tüm T&amp;P'lerin ECDIS'te olduğu anlamına gelmez.
       </div>
 
       <div id="rpt-list">
@@ -373,7 +392,8 @@ const S = {
   mapReady: false,
   drawnGroup: null,
   routeLayer: null,
-  activeFilter: 'ALL'
+  activeFilter: 'ALL',
+  statusFilter: 'ACTIVE' /* S6: varsayılan sadece aktif (KAPTAN S4: ekranda sadece aktifler) */
 };
 
 const DATA_URL = './data/tp_notices.json?v=' + Date.now();
@@ -402,7 +422,11 @@ async function fetchStatusAndData() {
     const r = await fetch(DATA_URL);
     const d = await r.json();
     S.tpRaw = d.notices || [];
-    document.getElementById('stat-notices').textContent = S.tpRaw.length.toLocaleString() + ' T&P Active';
+    /* S6: rozet yerine aktif/iptal sayacı (K2/S1/S3 + KAPTAN S4/S6) */
+    const na = S.tpRaw.filter(n => (n.status || 'active') === 'active').length;
+    const nc = S.tpRaw.filter(n => n.status === 'cancelled').length;
+    document.getElementById('stat-notices').textContent =
+      na.toLocaleString() + ' Active / ' + nc.toLocaleString() + ' Cancelled';
   } catch (e) {
     document.getElementById('stat-notices').textContent = 'Database Offline';
   }
@@ -637,11 +661,37 @@ function renderReport() {
 
 function setSeverityFilter(sev) {
   S.activeFilter = sev;
-  document.querySelectorAll('.f-chip').forEach(b => b.classList.remove('active'));
-  if (sev === 'ALL') document.getElementById('f-all').classList.add('active');
-  if (sev === 'RED') document.getElementById('f-red').classList.add('active');
-  if (sev === 'AMBER') document.getElementById('f-amber').classList.add('active');
+  document.getElementById('f-all').classList.toggle('active', sev === 'ALL');
+  document.getElementById('f-red').classList.toggle('active', sev === 'RED');
+  document.getElementById('f-amber').classList.toggle('active', sev === 'AMBER');
   filterReport();
+}
+
+/* S6: status filtresi (all/active/cancelled). Kaynak: S3 cevabı + KAPTAN S6 EVET. */
+function setStatusFilter(st) {
+  S.statusFilter = st;
+  document.getElementById('fs-active').classList.toggle('active', st === 'ACTIVE');
+  document.getElementById('fs-cancelled').classList.toggle('active', st === 'CANCELLED');
+  document.getElementById('fs-all').classList.toggle('active', st === 'ALL');
+  filterReport();
+}
+
+/* S6: kaynak satırı + status rozeti. Kaynak: S3 (kaynak satırı, DOĞRULANMADI ibaresi) + K2/S1 (iptal). */
+function sourceLine(n) {
+  const st = n.status || 'active';
+  if (st === 'cancelled') {
+    return `<div class="src-line">İptal: ${escapeHtml(n.cancelled_by || 'bilinmiyor')}</div>`;
+  }
+  if (n.cancelled_by || (n.cancels && n.cancels.length)) {
+    return `<div class="src-line">Kaynak: ${escapeHtml(n.cancelled_by || n.cancels.join(', '))}</div>`;
+  }
+  return `<div class="src-line unverified">DOĞRULANMADI - kaptana danış</div>`;
+}
+
+function statusBadge(n) {
+  const st = n.status || 'active';
+  if (st === 'cancelled') return `<span class="item-tag tag-grey">Cancelled</span>`;
+  return `<span class="item-tag tag-green">Active</span>`;
 }
 
 function filterReport() {
@@ -667,6 +717,10 @@ function filterReport() {
   if (S.activeFilter === 'RED') filtered = filtered.filter(r => r.color === 'red');
   if (S.activeFilter === 'AMBER') filtered = filtered.filter(r => r.color === 'amber');
 
+  // S6: Status filter (Kaynak: S3 + KAPTAN S6 EVET)
+  if (S.statusFilter === 'ACTIVE') filtered = filtered.filter(r => (r.notice.status || 'active') === 'active');
+  if (S.statusFilter === 'CANCELLED') filtered = filtered.filter(r => r.notice.status === 'cancelled');
+
   // Text / Chart search filter
   if (query) {
     filtered = filtered.filter(r => {
@@ -689,6 +743,7 @@ function filterReport() {
       <div class="rpt-item-card" id="card-${idx}">
         <div class="rpt-card-main" onclick="toggleCard(${idx})">
           <span class="item-tag tag-${r.color}">${r.color === 'red' ? 'XTD Conflict' : 'Caution'}</span>
+          ${statusBadge(n)}
           <div class="item-id-wrap">
             <div class="item-id">${n.id}</div>
             <div class="item-geo">${n.geometry_type}</div>
@@ -720,6 +775,7 @@ function filterReport() {
           </div>
 
           <div class="raw-text-panel">${escapeHtml(n.text || 'No text available')}</div>
+          ${sourceLine(n)}
 
           <div class="bottom-action-bar">
             <button class="btn-fly" onclick="locateOnMap(${idx})">

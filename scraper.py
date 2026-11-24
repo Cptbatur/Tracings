@@ -9,6 +9,130 @@ PDF_DIR = "pdf_cache"
 DATA_DIR = "data"
 JSON_PATH = os.path.join(DATA_DIR, "tp_notices.json")
 
+# --- S6 indirme katmani ---
+# Kaynak: git b64a787 scraper.py (UKHO_BASE/_download_pdf_cached/scrape_single_week/
+# scrape_annual) + sorular-cevaplar.md S10(a) koordinator cevabi + Kaptan S6 karari
+# (ELLE INDIRME YOK: kod haftalik indirmeleri yapip depolayacak).
+# Ag yoksa dry-run raporu verip mevcut cache ile devam eder, parse akisi bozulmaz.
+try:
+    import requests
+    from bs4 import BeautifulSoup
+    from html import unescape
+    _HAS_NET_LIB = True
+except ImportError:
+    _HAS_NET_LIB = False
+
+UKHO_BASE = "https://msi.admiralty.co.uk"
+UKHO_WEEKLY_URL = f"{UKHO_BASE}/NoticesToMariners/Weekly"
+UKHO_ANNUAL_URL = f"{UKHO_BASE}/NoticesToMariners/Annual"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+def _get_session():
+    s = requests.Session()
+    s.headers.update({'User-Agent': USER_AGENT})
+    return s
+
+def _download_pdf_cached(session, url, cache_filename):
+    """Mevcut dosya varsa atla (cache), yoksa indirip pdf_cache'e yaz."""
+    cache_path = os.path.join(PDF_DIR, cache_filename)
+    if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
+        return cache_path, False  # indirilmedi, cache kullanildi
+    resp = session.get(url, timeout=120)
+    resp.raise_for_status()
+    with open(cache_path, 'wb') as f:
+        f.write(resp.content)
+    return cache_path, True
+
+def _find_link_in_html(html, pattern):
+    soup = BeautifulSoup(html, 'lxml')
+    for a in soup.find_all('a', href=True):
+        parent_tr = a.find_parent('tr')
+        parent_text = parent_tr.get_text() if parent_tr else ""
+        anchor_text = a.get_text()
+        if re.search(pattern, parent_text, re.IGNORECASE) or re.search(pattern, anchor_text, re.IGNORECASE):
+            return unescape(a['href'])
+    return None
+
+def _build_full_url(link):
+    if link.startswith('/'):
+        return f"{UKHO_BASE}{link}"
+    if link.startswith('http'):
+        return link
+    return f"{UKHO_BASE}/{link}"
+
+def _disk_max_week(year):
+    best = 0
+    for p in glob.glob(os.path.join(PDF_DIR, f"week_{year}_*.pdf")):
+        m = re.search(r'week_\d{4}_(\d{2})\.pdf$', p)
+        if m:
+            best = max(best, int(m.group(1)))
+    return best
+
+def ensure_pdfs_cached(year=None, target_week=None):
+    """Weekly (week_YYYY_WW.pdf) + annual (annual_tp_YYYY.pdf) indirme katmani.
+
+    In-force/annual listesi S5 ile birlesik: bu katman sadece dosyayi indirir,
+    parse/status karari S5'e aittir (liste kaydi haftalikta yoksa EKLEMEZ).
+    Ag yoksa ya da kutuphane eksikse dry-run raporu verip cache ile devam eder.
+    """
+    os.makedirs(PDF_DIR, exist_ok=True)
+    if year is None:
+        year = datetime.now(timezone.utc).year
+    if not _HAS_NET_LIB:
+        print("[S6] requests/bs4 yok (dry-run): indirme atlandi, cache ile devam.")
+        return {"downloaded": [], "skipped_cache": [], "dry_run": True}
+    session = _get_session()
+    # Hedef hafta: UKHO sayfasindaki hdnWeek/hdnYear, ulasilamazsa diskteki max hafta
+    if target_week is None:
+        try:
+            html = session.get(UKHO_WEEKLY_URL, timeout=15).text
+            wk = re.search(r'hdnWeek.*?value="(\d+)"', html)
+            yr = re.search(r'hdnYear.*?value="(\d+)"', html)
+            if yr:
+                year = int(yr.group(1))
+            target_week = int(wk.group(1)) if wk else _disk_max_week(year)
+        except Exception as e:
+            print(f"[S6] UKHO'ya ulasilamadi ({e}) (dry-run): indirme atlandi, cache ile devam.")
+            return {"downloaded": [], "skipped_cache": [], "dry_run": True}
+    downloaded, skipped = [], []
+    try:
+        # 1. Annual ozet (in-force sayisal indeksini icerir; S10(b) formati)
+        annual_name = f"annual_tp_{year}.pdf"
+        annual_path = os.path.join(PDF_DIR, annual_name)
+        if os.path.exists(annual_path) and os.path.getsize(annual_path) > 0:
+            skipped.append(annual_name)
+        else:
+            resp = session.get(UKHO_ANNUAL_URL, timeout=30)
+            resp.raise_for_status()
+            link = _find_link_in_html(resp.text, r'Temporary\s+and\s+Preliminary\s+Notices')
+            if link:
+                _, is_new = _download_pdf_cached(session, _build_full_url(link), annual_name)
+                (downloaded if is_new else skipped).append(annual_name)
+            else:
+                print("[S6] Annual T&P linki bulunamadi, haftaliklarla devam.")
+        # 2. Haftalik bultenler 1..hedef hafta (yil+hafta -> week_YYYY_WW.pdf)
+        for week in range(1, target_week + 1):
+            cache_name = f"week_{year}_{week:02d}.pdf"
+            cache_path = os.path.join(PDF_DIR, cache_name)
+            if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
+                skipped.append(cache_name)
+                continue
+            try:
+                resp = session.post(UKHO_WEEKLY_URL, data={'year': str(year), 'week': str(week)}, timeout=30)
+                resp.raise_for_status()
+                link = _find_link_in_html(resp.text, r'snii')
+                if not link:
+                    print(f"[S6] Hafta {week}/{year}: link bulunamadi, atlandi.")
+                    continue
+                _, is_new = _download_pdf_cached(session, _build_full_url(link), cache_name)
+                (downloaded if is_new else skipped).append(cache_name)
+            except Exception as e:
+                print(f"[S6] Hafta {week}/{year} indirilemedi ({e}), cache ile devam.")
+    except Exception as e:
+        print(f"[S6] Indirme katmani hatasi ({e}): mevcut cache ile devam.")
+    print(f"[S6] Indirme ozeti: {len(downloaded)} yeni, {len(skipped)} cache'ten.")
+    return {"downloaded": downloaded, "skipped_cache": skipped, "dry_run": False}
+
 def normalize_text(txt):
     if not txt:
         return ""
@@ -209,6 +333,54 @@ def detect_geometry_type(text, coords):
         
     return 'POINT'
 
+# K2/S1 + KAPTAN S9 (2026-11-24): iki-durumlu iptal mantigi.
+# DURUM 1 (yenileme): "Former Notice NUM(T/P)/YR is/are cancelled" -> referans
+# verilen eski notice iptal olur, iceren kayit AKTIF kalir.
+# DURUM 2 (self-cancel): notice'in kendisi cancel mesajiysa ("this notice ...
+# cancelled" vb.) iceren kayit kendisi CANCELLED olur (cancelled_by:"self").
+_FORMER_RX = re.compile(
+    r'[Ff]ormer [Nn]otices?\s+(.+?)\s+(?:is|are|was|has been)\s+cancell?ed')
+_REF_RX = re.compile(r'(\d{1,5})\s*/?\(?\s*([TPtp])\s*\)?\s*/?\s*(\d{2,4})')
+_SELF_RX = re.compile(
+    r'[Tt]his notice[^.]{0,150}[Cc]ancell?ed|'
+    r'[Tt]his notice and [Ff]ormer [Nn]otice[^.]{0,150}[Cc]ancell?ed')
+
+def extract_cancel_info(text):
+    """Metinden (cancels_list, is_self_cancelled) dondurur.
+
+    Supheli/parse edilemeyen varyant S1 tutucu ilkeye gore aktif varsayilir.
+    """
+    flat = re.sub(r'\s+', ' ', text or '')
+    # DURUM 2 oncelikli: kendisinin iptal edildigi acikca yaziyorsa
+    is_self = bool(_SELF_RX.search(flat))
+    cancels = []
+    m = _FORMER_RX.search(flat)
+    if m:
+        for num, ntype, yr in _REF_RX.findall(m.group(1)):
+            ntype = ntype.upper()
+            yr = yr if len(yr) == 2 else yr[-2:]
+            cancels.append(f"{int(num)}({ntype})/{yr}")
+    return cancels, is_self
+
+# K10 + S10(b) + S11/KAPTAN 2026-11-24 (yil filtresi): in-force numerical index dali.
+# Liste SADECE annual/aylik IA PDF'indeki "NUMERICAL INDEX OF NOTICES IN FORCE ON
+# <tarih>" baslikli sayfalardadir; haftalik PDF'lerde yoktur. Tarih PDF ic
+# basligindan alinir, dosya adindan degil. S11: liste yilindan yeniler muaf.
+_INFORCE_TITLE_RX = re.compile(
+    r'NUMERICAL INDEX OF NOTICES IN FORCE ON\s+'
+    r'(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\s+(\d{4})',
+    re.IGNORECASE)
+_INFORCE_ENTRY_RX = re.compile(r'(\d{1,4})\(([TP])\)/(\d{2})\s+2\.\d+')
+
+def _norm_inforce_id(num, ntype, yy):
+    return f"{int(num)}({ntype.upper()})/{yy}"
+
+def _norm_notice_id(nid):
+    m = re.match(r'(\d+)\(([TPtp])\)/(\d{2,4})', nid or '')
+    if not m:
+        return nid
+    return f"{int(m.group(1))}({m.group(2).upper()})/{m.group(3)[-2:]}"
+
 def is_valid_page(pdf_path, text):
     lines = [l.strip() for l in text.split('\n') if l.strip()]
     if not lines:
@@ -225,8 +397,10 @@ def is_valid_page(pdf_path, text):
         return True
     return True
 
-def process_pdfs():
+def process_pdfs(run_download=True):
     os.makedirs(DATA_DIR, exist_ok=True)
+    if run_download:
+        ensure_pdfs_cached()  # S6: once indir/depola, sonra mevcut parse akisi
     pdf_files = sorted(glob.glob(os.path.join(PDF_DIR, "*.pdf")))
     
     notices = []
@@ -277,6 +451,15 @@ def process_pdfs():
                                 existing["has_coordinates"] = len(existing["coordinates"]) > 0
                                 # Metni de birleştir
                                 existing["text"] += "\n" + clean_block
+                                # S9 DURUM 1/2: devam blogunda gelen iptal cumlesini de isle
+                                # (ilk blokta cumle yoksa cancels bos kalirdi)
+                                mc, ms = extract_cancel_info(existing["text"])
+                                for r in mc:
+                                    if r not in existing.get("cancels", []):
+                                        existing["cancels"].append(r)
+                                if ms:
+                                    existing["status"] = "cancelled"
+                                    existing["cancelled_by"] = "self"
                                 # Geometriyi ve segmentleri tüm koordinatlarla yeniden belirle
                                 existing["geometry_type"] = detect_geometry_type(existing["text"], existing["coordinates"])
                                 existing["segments"] = split_into_segments(existing["text"], existing["coordinates"]) if existing["geometry_type"] in ['LINE', 'AREA'] else []
@@ -289,11 +472,15 @@ def process_pdfs():
                         c_lat = coords[0][0] if coords else None
                         c_lon = coords[0][1] if coords else None
                         
+                        cancels, is_self = extract_cancel_info(clean_block)
                         notice_obj = {
                             "id": notice_id,
                             "number": int(num),
                             "type": ntype,
                             "year": int(yr) if len(yr)==4 else int("20"+yr),
+                            "status": "cancelled" if is_self else "active",
+                            "cancelled_by": "self" if is_self else None,
+                            "cancels": cancels,
                             "title": subject.replace(" (continued)", "").replace(" (Continued)", "").strip() or "T&P Notice",
                             "region": subject.split('-')[0].strip() if '-' in subject else "UKHO",
                             "subject": subject,
@@ -310,6 +497,54 @@ def process_pdfs():
         except Exception:
             pass
 
+    # K10 in-force dusurme (S10(b) regex + S11 yil filtresi, KAPTAN ONAYLI 2026-11-24):
+    # SADECE status active VE notice yili <= liste yili olan kayitlar listede
+    # aranir; listede yoksa cancelled + cancelled_by "in-force <tarih>".
+    # Liste tarihinden yeniler (or. liste 2025 iken 2026 kayitlari) MUAFTIR.
+    inforce_ids = set()
+    inforce_date = None
+    inforce_year = None
+    for pdf_path in pdf_files:
+        if "annual" not in pdf_path:
+            continue
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                for page in pdf.pages:
+                    t = page.extract_text() or ""
+                    if "NUMERICAL INDEX OF NOTICES IN FORCE" not in t:
+                        continue
+                    mt = _INFORCE_TITLE_RX.search(re.sub(r'\s+', ' ', t))
+                    if mt and inforce_date is None:
+                        inforce_date = f"{mt.group(1)} {mt.group(2)} {mt.group(3)}"
+                        inforce_year = int(mt.group(3))
+                    for num, ntype, yy in _INFORCE_ENTRY_RX.findall(t):
+                        inforce_ids.add(_norm_inforce_id(num, ntype, yy))
+        except Exception:
+            pass
+    n_inforce_drop = 0
+    n_inforce_exempt = 0
+    if inforce_ids and inforce_year:
+        for n in notices:
+            if n.get("status") != "active":
+                continue
+            if n.get("year", 9999) > inforce_year:
+                n_inforce_exempt += 1  # S11 muafiyeti: liste tarihinden yeni
+                continue
+            if _norm_notice_id(n.get("id")) not in inforce_ids:
+                n["status"] = "cancelled"
+                n["cancelled_by"] = f"in-force {inforce_date}"
+                n_inforce_drop += 1
+
+    # DURUM 1 cozumu (2. tur): cancels referansi JSON'da mevcutsa o kayit
+    # status:"cancelled" + cancelled_by:"<bu notice id>" olur. (K2/S1 + S9)
+    by_id = {n["id"]: n for n in notices}
+    for n in notices:
+        for ref in n.get("cancels", []):
+            tgt = by_id.get(ref)
+            if tgt is not None and tgt.get("cancelled_by") != "self":
+                tgt["status"] = "cancelled"
+                tgt["cancelled_by"] = n["id"]
+
     result = {
         "last_updated": datetime.now(timezone.utc).isoformat(),
         "total_notices": len(notices),
@@ -323,6 +558,12 @@ def process_pdfs():
     print(f"Toplam T&P İlanı: {len(notices)}")
     with_c = sum(1 for n in notices if n['has_coordinates'])
     print(f"Haritada Gösterilebilecek İlanlar: {with_c}")
+    n_act = sum(1 for n in notices if n.get('status') == 'active')
+    n_can = sum(1 for n in notices if n.get('status') == 'cancelled')
+    n_cancels = sum(1 for n in notices if n.get('cancels'))
+    print(f"Aktif: {n_act} / Iptal: {n_can} / cancels dolu: {n_cancels}")
+    if inforce_date:
+        print(f"In-force ({inforce_date}): listede {len(inforce_ids)}, dusen: {n_inforce_drop}, muaf: {n_inforce_exempt}")
 
 if __name__ == "__main__":
     process_pdfs()
