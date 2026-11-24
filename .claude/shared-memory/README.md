@@ -7,8 +7,9 @@ Bu klasör 4 sub-agent'ın ortak hafızasıdır. Her agent işe başlarken ilgil
 - `tp-bilgi-bankasi.md` — tp-bilirkisi yazar, tp-kodlayici ve tp-scraper-denetci okur. Onaylı T&P kuralları.
 - `kod-haritasi.md` — tp-kodlayici yazar, tp-scraper-denetci okur. Kodun işleyiş haritası.
 - `scraper-denetim.md` — tp-scraper-denetci yazar, tp-kodlayici uygular. Denetim raporları (tamlık/doğruluk/format).
-- `sorular-cevaplar.md` — soran sorar, bilen cevaplar. Kod yazmadan/denetimi kapatmadan önceki belirsizlikler burada çözülür.
-- `gorev-log.md` — 4 agent da iş bitince 3-5 satır log düşer (tarih, ne yaptı, sonuç).
+- `test-denetim.md` — tp-test-denetci yazar, karar kaptanındır. Sınırsız test raporları (UI/güncellik/rapor/ayıklama/geometri/in-force/kaynak sadakati).
+- `sorular-cevaplar.md` — soran sorar, bilen cevaplar. Kod yazmadan/denetimi kapatmadan önceki belirsizlikler burada çözülür. Test agentının uyandırma istekleri de buradadır.
+- `gorev-log.md` — 5 agent da iş bitince 3-5 satır log düşer (tarih, ne yaptı, sonuç).
 
 ## Protokol (zorunlu)
 

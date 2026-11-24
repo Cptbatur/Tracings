@@ -46,3 +46,24 @@
 - JSON eslesme (python3 -c, 1 kayit): status/cancelled_by/cancels alanlari mevcut (active/None/[]); total 3352, active 2998 / cancelled 354. HTML `(n.status||'active')` varsayimi JSON ile uyumlu. | Hüküm: GEÇTİ
 - D1 DÜŞTÜ: "hepsi Active sayılıyor" açığı kapandı (rozet + sayaç "2998 Active / 354 Cancelled" + varsayılan Active filtresi). Disclaimer D1 revize edilmeli.
 - SONUÇ: GEÇTİ — KODLAYICIYA DEVİR yok. (Tarayıcı testi yapılmadı, statik kontrol.)
+
+## Ara denetim Convert (2026-11-25, tp-scraper-denetci)
+- diff: 260+/6-; silinenler zararsiz (yorum basligi, eski parseRoute dallanmasi). Audit akisi bozulmadi: fetchStatusAndData/filterReport/parseRTZ/parseGPX yerinde, audit import parseRoute'u kullaniyor (RTZ/GPX davranisi aynen korunur).
+- Sekme akisi tam bagli: tab-convert + n-convert switchTab('convert') + conv-inp change + downloadConv('rtz'/'gpx') + previewOnMap; switchTab jenerik (id拼接), convert icin ozel dal gerekmez; previewOnMap audit ic formatina ({lat,lon}) indirger, renderRoute ile uyumlu.
+- node --check OK (inline JS cikartilarak); parantez/suslu denge 0/0.
+- Parser dogrulama (gercek ROUTES dosyalari): RT3 GEÇTİ (SingBunker_HuangPu.RT3: 34 WP, ilk WP lat 1.2823 lon 104.0069 = Singapore; Lon DMM yorumu dogru — "6240.416" 62° degil 62+40.416/60 BOYLAM hanesi). CVT dosya-tanima GEÇTİ (27 WP, Cristobal ismi) AMA koordinat KALDI: dosya Latin-1 (0xF8 derece), file.text() UTF-8 okuyunca U+FFFD olur; parseDMM regexi [\d.]+ ile dereceyi atlayip dakikayi derece sanir (Cristobal lat 9.38N yerine ~22.02 hesaplandi, lon -79.92W yerine ~-55.00).
+- KODLAYICIYA DEVİR: parseCVT Latin-1 duzeltmesi — conv-inp handler'da CVT icin FileReader/ArrayBuffer + TextDecoder('windows-1252') ile oku (veya parseDMM regexine � toleransi + fallback: derece kismi yoksa ilk sayiyi dakika degil derece-dakika olarak yorumla). Kriter: "Panama transit.CVT" ilk WP lat 9.38±0.01, lon -79.92±0.01 olmali. Ayrica kod yorumundaki "Singapore 1.2858N/103.7558E, Cristobal 9.38N/-79.92W" ornek degerleri bu testle teyit edilmeli.
+- NOT (denetim disi, S12): RTE/CVT-disi formatlar (RTE binary/OLE, JRC/FURUNO/KH/MARIS/Consilium ornegi, OLE kapsami) icin ornek dosya gerekliligi sorulari denetlenmedi; kodlayici logundaki acik aynen duruyor.
+- SONUÇ: KALDI — 1 devir (CVT encoding).
+
+## Ara denetim Convert-2 (2026-11-25, tp-scraper-denetci)
+- conv-inp handler SADECE okuma katmani degismis: .cvt ise ArrayBuffer + TextDecoder('windows-1252'), digerleri file.text() aynen (detect/parse/build/download/indirgeme dokunulmamis). parseDMM'e dokunulmadi (regex ayni, diff'te sadece yorum satiri degisikligi). | Hüküm: GEÇTİ
+- Bagimsiz test (python3 -I, windows-1252): Panama transit.CVT ilk WP Cristobal 9.3817/-79.9190 → 9.38±0.01 / -79.92±0.01 icinde. UTF-8 okusa UnicodeDecodeError (0xF8) — duzeltme gerekliydi. | Hüküm: GEÇTİ
+- node --check: inline <script> cikartilarak SYNTAX OK (index.html'e direkt check uzanti hatasi verir, beklenen). | Hüküm: GEÇTİ
+- SONUÇ: GEÇTİ — KODLAYICIYA DEVİR yok.
+
+## Ara denetim RTE (2026-11-25, tp-scraper-denetci)
+- diff: index.html 349 satir; yeni kod SADECE detectRouteFormat RTE+DOCUMENT dallari + parseRTE + DOCUMENT uyarisi (file-inp + conv-inp) + ArrayBuffer okuma gecisi. Onceki commit hunklari (CSS/convert/status) kapsam disi degil, eski parserlara dokunulmadi.
+- Bagimsiz test (python3 -I struct): Brh-Fred hdr17/17 WP, STHM-TLB hdr8/8 WP, Sak-Nag hdr23/22 WP + 1 skip — cokme yok. OLE magic D0CF11E0A1B11AE1 dogru.
+- node --check: inline script SYNTAX OK.
+- SONUÇ: GEÇTİ — KODLAYICIYA DEVİR yok.
