@@ -68,16 +68,24 @@ def _disk_max_week(year):
             best = max(best, int(m.group(1)))
     return best
 
-def ensure_pdfs_cached(year=None, target_week=None):
+def ensure_pdfs_cached(year=None, target_week=None, backfill_years=()):
     """Weekly (week_YYYY_WW.pdf) + annual (annual_tp_YYYY.pdf) indirme katmani.
 
     In-force/annual listesi S5 ile birlesik: bu katman sadece dosyayi indirir,
     parse/status karari S5'e aittir (liste kaydi haftalikta yoksa EKLEMEZ).
     Ag yoksa ya da kutuphane eksikse dry-run raporu verip cache ile devam eder.
+
+    backfill_years: gecmis yil haftaliklari icin tedarik listesi (orn. (2024, 2025)).
+    Kaynak: scraper-denetim.md "47 KAYIP INCELEMESI" devir-1 (2026-11-25) + Kaptan S6.
+    Gecmis yillar icin hedef hafta sabiti 52'dir (tam yil haftalik seti); annual
+    dali SADECE ana yil (year) icin calisir, gecmis yillara dokunmaz. 2026 akisi
+    (cache-atlama + dry-run + parse) aynen korunur.
     """
     os.makedirs(PDF_DIR, exist_ok=True)
     if year is None:
         year = datetime.now(timezone.utc).year
+    # Gecmis-yil tedariki (devir-1): sadece gecerli yil no'lari kabul et, ana yili tekrarlama.
+    backfill_years = tuple(y for y in (backfill_years or ()) if isinstance(y, int) and 2000 <= y <= year - 1 and y != year)
     if not _HAS_NET_LIB:
         print("[S6] requests/bs4 yok (dry-run): indirme atlandi, cache ile devam.")
         return {"downloaded": [], "skipped_cache": [], "dry_run": True}
@@ -89,14 +97,22 @@ def ensure_pdfs_cached(year=None, target_week=None):
             wk = re.search(r'hdnWeek.*?value="(\d+)"', html)
             yr = re.search(r'hdnYear.*?value="(\d+)"', html)
             if yr:
-                year = int(yr.group(1))
+                site_year = int(yr.group(1))
+                # Gecmis-yil cagrisinda site yilinin ana yili ezmesine izin verme.
+                if target_week is None and not backfill_years and year == datetime.now(timezone.utc).year:
+                    year = site_year
             target_week = int(wk.group(1)) if wk else _disk_max_week(year)
         except Exception as e:
             print(f"[S6] UKHO'ya ulasilamadi ({e}) (dry-run): indirme atlandi, cache ile devam.")
             return {"downloaded": [], "skipped_cache": [], "dry_run": True}
+    if not target_week:
+        target_week = _disk_max_week(year)
+    # Yil -> hedef hafta: ana yil dinamik, gecmis yillar tam set (52).
+    year_targets = [(year, target_week)] + [(y, 52) for y in backfill_years]
     downloaded, skipped = [], []
     try:
-        # 1. Annual ozet (in-force sayisal indeksini icerir; S10(b) formati)
+        # 1. Annual ozet SADECE ana yil icin (in-force sayisal indeksini icerir; S10(b) formati).
+        # Gecmis-yil tedarikine (backfill_years) annual dali KAPALI — S5 listesi tek yillidir.
         annual_name = f"annual_tp_{year}.pdf"
         annual_path = os.path.join(PDF_DIR, annual_name)
         if os.path.exists(annual_path) and os.path.getsize(annual_path) > 0:
@@ -110,28 +126,92 @@ def ensure_pdfs_cached(year=None, target_week=None):
                 (downloaded if is_new else skipped).append(annual_name)
             else:
                 print("[S6] Annual T&P linki bulunamadi, haftaliklarla devam.")
-        # 2. Haftalik bultenler 1..hedef hafta (yil+hafta -> week_YYYY_WW.pdf)
-        for week in range(1, target_week + 1):
-            cache_name = f"week_{year}_{week:02d}.pdf"
-            cache_path = os.path.join(PDF_DIR, cache_name)
-            if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
-                skipped.append(cache_name)
-                continue
-            try:
-                resp = session.post(UKHO_WEEKLY_URL, data={'year': str(year), 'week': str(week)}, timeout=30)
-                resp.raise_for_status()
-                link = _find_link_in_html(resp.text, r'snii')
-                if not link:
-                    print(f"[S6] Hafta {week}/{year}: link bulunamadi, atlandi.")
+        # 2. Haftalik bultenler: ana yil 1..hedef hafta, gecmis yillar 1..52
+        # (yil+hafta -> week_YYYY_WW.pdf). Mevcut dosya varsa atla (cache).
+        for y, last_week in year_targets:
+            for week in range(1, (last_week or 0) + 1):
+                cache_name = f"week_{y}_{week:02d}.pdf"
+                cache_path = os.path.join(PDF_DIR, cache_name)
+                if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
+                    skipped.append(cache_name)
                     continue
-                _, is_new = _download_pdf_cached(session, _build_full_url(link), cache_name)
-                (downloaded if is_new else skipped).append(cache_name)
-            except Exception as e:
-                print(f"[S6] Hafta {week}/{year} indirilemedi ({e}), cache ile devam.")
+                try:
+                    resp = session.post(UKHO_WEEKLY_URL, data={'year': str(y), 'week': str(week)}, timeout=30)
+                    resp.raise_for_status()
+                    link = _find_link_in_html(resp.text, r'snii')
+                    if not link:
+                        print(f"[S6] Hafta {week}/{y}: link bulunamadi, atlandi.")
+                        continue
+                    _, is_new = _download_pdf_cached(session, _build_full_url(link), cache_name)
+                    (downloaded if is_new else skipped).append(cache_name)
+                except Exception as e:
+                    print(f"[S6] Hafta {week}/{y} indirilemedi ({e}), cache ile devam.")
     except Exception as e:
         print(f"[S6] Indirme katmani hatasi ({e}): mevcut cache ile devam.")
     print(f"[S6] Indirme ozeti: {len(downloaded)} yeni, {len(skipped)} cache'ten.")
     return {"downloaded": downloaded, "skipped_cache": skipped, "dry_run": False}
+
+
+# --- Devir-2/v2: yabanci-otorite atif eslemesi (karsilastirma yardimcisi, JSON'a YAZMAZ) ---
+# Kaynak: scraper-denetim.md "47 DEVIR DOGRULAMA" (2026-11-25, tp-scraper-denetci; kaptan onayli v2).
+# (a) ciplak kalip: "Notice NNN(T/P)/YY" (seri oneeksiz, örn. "Portuguese Notice 9/264" DEGIL,
+#     seri varsa yakalanir) | (b) cogul + virgullu liste: "Notices 245(T)/25, 250(T)/25"
+#     (devam eden her "NNN(T/P)/YY" ayni otorite altinda toplanir) | (c) otorite anahtarli
+#     map: {"Indonesian 164(T)/26": "3491(T)/26", ...} — 164 cift otoriteli
+#     (Indonesian 25/164->3491 + Spanish 28/164->3897), anahtarsiz eslesme YANILTICI.
+# JSON'a kayit EKLENMEZ (atif != UKHO notice); sadece test/karsilastirma ciktisi.
+SOURCE_AUTH_RE = re.compile(r'([A-Z][\w\-]*(?:\s+[A-Z][\w\-.&]*)*)\s+Notice[s]?\b')
+SOURCE_CITATION_RE = re.compile(
+    r'(?:(?P<serial>\d{1,3})/)?(?P<num>\d{1,5})\((?P<tp>[TP])\)/(?P<yr>\d{2})\b'
+)
+
+def _authority_key(raw):
+    """Source otorite adini tek anahtar kelimeye indirger (örn. 'Marine Department, Malaysia' -> 'Malaysia')."""
+    raw = (raw or "").replace(",", " ").replace(".", " ").replace("&", " ")
+    toks = [t for t in raw.split() if t and t[0].isupper()]
+    return toks[-1] if toks else (raw.strip().split() or ["?"])[-1]
+
+def _source_segments_for(text):
+    """tek Source satiri -> [(otorite, atif_bolgesi)] listesi ('and' ile bolunur)."""
+    m = re.search(r'Source:(.*?)(?=\n\s*\d+\.\s)', text or "", re.S)
+    if not m:
+        return []
+    out = []
+    for seg in re.split(r'\band\b', m.group(1).replace("\n", " "), flags=re.I):
+        am = SOURCE_AUTH_RE.search(seg)
+        if am:
+            out.append((_authority_key(am.group(1)), seg[am.end():]))
+        elif out:
+            out.append((out[-1][0], seg))  # otoritesiz devam: onceki otorite
+    return out
+
+def build_source_citation_map(notices):
+    """ADC-no -> UKHO-baslik esleme tablosu (test karsilastirmasi icin).
+
+    Girdi: JSON notices listesi (id/text alanli).
+    Cikti: {"Indonesian 164(T)/26": "3491(T)/26", "Malaysia 245(T)/25": "854(P)/26", ...}.
+    JSON'a kayit EKLENMEZ; sadece karsilastirma betisine verilir.
+    Not: seri oneeksiz ciplak "Notice NNN(T/P)/YY" da eslesir (Portekiz 9/xxx dahil).
+    """
+    mapping = {}
+    for n in notices or []:
+        nid = n.get("id")
+        for auth, zone in _source_segments_for(n.get("text") or ""):
+            for m in SOURCE_CITATION_RE.finditer(zone):
+                key = f"{auth} {int(m.group('num'))}({m.group('tp')})/{m.group('yr')}"
+                prev = mapping.get(key)
+                if prev is None:
+                    mapping[key] = nid
+                elif prev != nid:
+                    # Ayni atif birden cok UKHO basliginda: en dusuk numarali baslik
+                    # kazanir (orijinal tasiyici; örn. 854<2559, 3512<5685). Statüye
+                    # baglanmaz; sadece test/karsilastirma ciktisidir.
+                    try:
+                        if int(str(nid).split("(")[0]) < int(str(prev).split("(")[0]):
+                            mapping[key] = nid
+                    except (ValueError, IndexError):
+                        pass
+    return mapping
 
 def normalize_text(txt):
     if not txt:
